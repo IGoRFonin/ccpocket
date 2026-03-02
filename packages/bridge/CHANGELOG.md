@@ -2,6 +2,11 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.9.7] - 2026-03-02
+
+### Fixed
+- Auto-refresh expired OAuth access token before starting SDK session (prevents auth errors when token expires between CLI sessions)
+
 ## [1.9.6] - 2026-03-02
 
 ### Fixed
