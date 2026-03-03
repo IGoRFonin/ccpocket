@@ -30,7 +30,7 @@ generate() {
   # Use raw screenshots (no frame, no cropping)
   sed -e "s|ICON_PATH|file://${ICON}|g" \
       -e "s|SCREENSHOT_1_PATH|file://${screenshots_dir}/01_session_list.png|g" \
-      -e "s|SCREENSHOT_2_PATH|file://${screenshots_dir}/02_approval_list.png|g" \
+      -e "s|SCREENSHOT_2_PATH|file://${screenshots_dir}/04_markdown_input.png|g" \
       "$SCRIPT_DIR/$template_name" > "$temp_html"
 
   npx playwright screenshot \

@@ -32,12 +32,13 @@
     height: 100%;
     display: flex;
     align-items: center;
+    /* Safe zone: 102px left/right, 75px top, 100px bottom */
+    padding: 75px 102px 100px 102px;
   }
 
   /* Left side: Logo + Text */
   .left {
-    flex: 0 0 420px;
-    padding-left: 60px;
+    flex: 0 0 380px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -106,12 +107,12 @@
     border: 1px solid rgba(80, 220, 180, 0.3);
   }
 
-  /* Right side: Screenshots */
+  /* Right side: Screenshots — intentionally overflow for dynamic look */
   .right {
     flex: 1;
     position: relative;
     height: 100%;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .phone-frame {
@@ -132,8 +133,8 @@
   .phone-1 {
     width: 270px;
     height: 540px;
-    top: 20px;
-    left: 30px;
+    top: -30px;
+    left: 10px;
     transform: perspective(800px) rotateY(-5deg);
     z-index: 2;
   }
@@ -141,8 +142,8 @@
   .phone-2 {
     width: 250px;
     height: 510px;
-    top: 30px;
-    left: 265px;
+    top: -20px;
+    left: 240px;
     transform: perspective(800px) rotateY(-8deg);
     z-index: 1;
     opacity: 0.8;
