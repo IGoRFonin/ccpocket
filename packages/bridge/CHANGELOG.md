@@ -2,6 +2,14 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.10.0] - 2026-03-03
+
+### Added
+- `BRIDGE_ALLOWED_DIRS` environment variable for project path whitelist (defaults to `$HOME`)
+- Path validation on `start`, `resume_session`, `get_diff`, `get_diff_image`, `list_files`, `list_worktrees`, `remove_worktree` — rejects paths outside allowed directories
+- Include `allowedDirs` in `session_list` message for client-side path input assistance
+- Send `project_history` on WebSocket connect so clients receive history immediately
+
 ## [1.9.7] - 2026-03-02
 
 ### Fixed
