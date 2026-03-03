@@ -1,6 +1,6 @@
 # ccpocket
 
-Claude Code / Codex対応モバイルクライアント。Bridge Server経由でコーディングエージェントをiPhone/Androidから操作できます。
+Claude Code / Codex対応モバイルクライアント。mac上のClaude Code / Codexを、スマホからリモート操作できます。
 
 [English README](README.md)
 

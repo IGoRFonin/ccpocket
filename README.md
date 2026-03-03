@@ -1,6 +1,6 @@
 # ccpocket
 
-Mobile client for Claude Code and Codex. Control coding agents from your iPhone or Android via a WebSocket bridge server.
+Mobile client for Claude Code and Codex. Remote control coding AI on your mac from your phone via a WebSocket bridge server.
 
 [日本語版 README](README.ja.md)
 
