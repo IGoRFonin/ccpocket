@@ -1,1 +1,1 @@
-Remote control Claude Code & Codex on your mac from your phone. Start sessions, approve tools at a glance, and write rich prompts with images.
+Remote control Claude Code & Codex from your phone. Start sessions, approve tools at a glance, and write rich prompts with images.

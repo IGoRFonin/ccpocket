@@ -1,1 +1,1 @@
-Remote control for Claude Code & Codex on your mac. Sessions, approvals & more.
+Remote control for Claude Code & Codex. Sessions, approvals & more.
