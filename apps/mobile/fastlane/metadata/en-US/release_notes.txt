@@ -1,1 +1,7 @@
-Initial release.
+- Extended FAB with "New" label for easier session creation
+- Swipe to switch between Claude and Codex in new session sheet
+- Swipe-to-archive for recent sessions
+- Dynamic model list delivery from Bridge Server
+- Codex MCP tool approval displayed as ApprovalBar
+- Improved error messages with structured error codes
+- Fixed iOS launch crash (Flutter 3.41.4)
