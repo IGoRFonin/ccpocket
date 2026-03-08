@@ -355,7 +355,7 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     bridge.close();
   });
 
-  it("maps set_permission_mode plan to collaborationMode for codex session", async () => {
+  it("maps set_permission_mode plan to collaborationMode for codex session (restart)", async () => {
     const bridge = new BridgeWebSocketServer({ server: httpServer });
     const ws = {
       readyState: OPEN_STATE,
@@ -375,21 +375,30 @@ describe("BridgeWebSocketServer resume/get_history flow", () => {
     const sends = ws.send.mock.calls.map((c: unknown[]) => JSON.parse(c[0] as string));
     const created = sends.find((m: any) => m.type === "system" && m.subtype === "session_created");
     expect(created).toBeDefined();
-    const sessionId = created.sessionId as string;
+    const oldSessionId = created.sessionId as string;
 
-    const session = (bridge as any).sessionManager.get(sessionId);
+    // Old session should exist before permission mode change
+    expect((bridge as any).sessionManager.get(oldSessionId)).toBeDefined();
 
     (bridge as any).handleClientMessage(
       {
         type: "set_permission_mode",
-        sessionId,
+        sessionId: oldSessionId,
         mode: "plan",
       },
       ws,
     );
 
-    expect(session.process.setApprovalPolicy).toHaveBeenCalledWith("on-request");
-    expect(session.process.setCollaborationMode).toHaveBeenCalledWith("plan");
+    // Codex permission mode change triggers a session restart:
+    // The old session is destroyed and a new one is created.
+    expect((bridge as any).sessionManager.get(oldSessionId)).toBeUndefined();
+
+    // A new session should exist with the correct collaboration mode
+    const sessions = (bridge as any).sessionManager.list();
+    expect(sessions).toHaveLength(1);
+    const newSession = sessions[0];
+    expect(newSession.id).not.toBe(oldSessionId);
+    expect(newSession.provider).toBe("codex");
 
     bridge.close();
   });

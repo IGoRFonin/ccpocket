@@ -2,6 +2,13 @@
 
 All notable changes to `@ccpocket/bridge` will be documented in this file.
 
+## [1.13.1] - 2026-03-08
+
+### Fixed
+- Rewind session_created messages now include `sourceSessionId`, preventing duplicate session screens on restart and rewind
+- Codex permission mode changes trigger a session restart (matching sandbox mode behavior) with confirmation dialog
+- Codex session_created response now includes `permissionMode`, ensuring restored sessions retain their permission setting
+
 ## [1.13.0] - 2026-03-08
 
 ### Added
