@@ -286,6 +286,10 @@ export class BridgeWebSocketServer {
               fallbackModel: msg.fallbackModel,
               forkSession: msg.forkSession,
               persistSession: msg.persistSession,
+              // Claude sandbox: map "on"/"off" to boolean
+              ...(provider === "claude" && msg.sandboxMode
+                ? { sandboxEnabled: msg.sandboxMode === "on" }
+                : {}),
             },
             undefined,
             {
@@ -317,9 +321,8 @@ export class BridgeWebSocketServer {
               sessionId,
               provider,
               projectPath: msg.projectPath,
-              ...(provider === "claude" && msg.permissionMode ? { permissionMode: msg.permissionMode } : {}),
-              ...(provider === "codex" && msg.permissionMode ? { permissionMode: msg.permissionMode } : {}),
-              ...(provider === "codex" && msg.sandboxMode ? { sandboxMode: msg.sandboxMode } : {}),
+              ...(msg.permissionMode ? { permissionMode: msg.permissionMode } : {}),
+              ...(msg.sandboxMode ? { sandboxMode: msg.sandboxMode } : {}),
               ...(cached ? { slashCommands: cached.slashCommands, skills: cached.skills, ...(cached.skillMetadata ? { skillMetadata: cached.skillMetadata } : {}) } : {}),
               ...(createdSession?.worktreePath ? {
                 worktreePath: createdSession.worktreePath,
@@ -689,15 +692,76 @@ export class BridgeWebSocketServer {
           this.send(ws, { type: "error", message: "No active session." });
           return;
         }
-        if (session.provider !== "codex") {
-          this.send(ws, { type: "error", message: "Only Codex sessions support sandbox mode changes" });
-          return;
-        }
-        // Map on/off to internal Codex sandbox modes
         if (msg.sandboxMode !== "on" && msg.sandboxMode !== "off") {
           this.send(ws, { type: "error", message: `Invalid sandbox mode: ${msg.sandboxMode}` });
           return;
         }
+
+        // ---- Claude sandbox toggle ----
+        if (session.provider === "claude") {
+          const newEnabled = msg.sandboxMode === "on";
+          if (session.sandboxEnabled === newEnabled) {
+            break; // No change needed
+          }
+
+          // Sandbox is a query-level setting — requires session restart.
+          const oldSessionId = session.id;
+          const claudeSessionId = session.claudeSessionId;
+          const projectPath = session.projectPath;
+          const worktreePath = session.worktreePath;
+          const worktreeBranch = session.worktreeBranch;
+          const sessionName = session.name;
+          const permissionMode = (session.process as SdkProcess).permissionMode;
+          const model = (session.process as SdkProcess).model;
+
+          this.sessionManager.destroy(oldSessionId);
+          console.log(`[ws] Claude sandbox change: destroyed session ${oldSessionId}`);
+
+          const newId = this.sessionManager.create(
+            projectPath,
+            {
+              sessionId: claudeSessionId,
+              permissionMode,
+              model,
+              sandboxEnabled: newEnabled,
+            },
+            undefined,
+            worktreePath ? { existingWorktreePath: worktreePath, worktreeBranch } : undefined,
+            "claude",
+          );
+
+          const newSession = this.sessionManager.get(newId);
+          if (newSession && sessionName) newSession.name = sessionName;
+
+          void this.loadAndSetSessionName(newSession, "claude", projectPath, claudeSessionId).then(() => {
+            this.broadcast({
+              type: "system",
+              subtype: "session_created",
+              sessionId: newId,
+              provider: "claude",
+              projectPath,
+              sandboxMode: msg.sandboxMode,
+              sourceSessionId: oldSessionId,
+              ...(newSession?.worktreePath ? {
+                worktreePath: newSession.worktreePath,
+                worktreeBranch: newSession.worktreeBranch,
+              } : {}),
+            });
+            this.broadcastSessionList();
+          });
+
+          this.debugEvents.set(newId, []);
+          this.recordDebugEvent(newId, {
+            direction: "internal" as const,
+            channel: "bridge" as const,
+            type: "sandbox_mode_changed",
+            detail: `sandbox=${newEnabled} claude=${claudeSessionId} oldSession=${oldSessionId}`,
+          });
+          console.log(`[ws] Claude sandbox change: created new session ${newId} (sandbox=${newEnabled})`);
+          break;
+        }
+
+        // ---- Codex sandbox toggle ----
         const newSandboxMode = sandboxModeToInternal(msg.sandboxMode);
         const currentSandboxMode = session.codexSettings?.sandboxMode ?? "workspace-write";
         if (newSandboxMode === currentSandboxMode) {
@@ -1303,6 +1367,7 @@ export class BridgeWebSocketServer {
               fallbackModel: msg.fallbackModel,
               forkSession: msg.forkSession,
               persistSession: msg.persistSession,
+              ...(msg.sandboxMode ? { sandboxEnabled: msg.sandboxMode === "on" } : {}),
             },
             pastMessages,
             worktreeOpts,
@@ -1317,6 +1382,7 @@ export class BridgeWebSocketServer {
               provider: "claude",
               projectPath: msg.projectPath,
               ...(msg.permissionMode ? { permissionMode: msg.permissionMode } : {}),
+              ...(msg.sandboxMode ? { sandboxMode: msg.sandboxMode } : {}),
               ...(cached ? { slashCommands: cached.slashCommands, skills: cached.skills, ...(cached.skillMetadata ? { skillMetadata: cached.skillMetadata } : {}) } : {}),
               ...(createdSession?.worktreePath ? {
                 worktreePath: createdSession.worktreePath,

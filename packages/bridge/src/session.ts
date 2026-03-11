@@ -47,6 +47,8 @@ export interface SessionInfo {
     networkAccessEnabled?: boolean;
     webSearchMode?: string;
   };
+  /** Claude sandbox enabled state (for resume). */
+  sandboxEnabled?: boolean;
 }
 
 export interface SessionSummary {
@@ -73,6 +75,8 @@ export interface SessionSummary {
     networkAccessEnabled?: boolean;
     webSearchMode?: string;
   };
+  /** Claude sandbox enabled state. */
+  sandboxEnabled?: boolean;
   pendingPermission?: {
     toolUseId: string;
     toolName: string;
@@ -392,6 +396,11 @@ export class SessionManager {
       });
     }
 
+    // Store Claude sandbox state for resume
+    if (effectiveProvider === "claude" && options?.sandboxEnabled != null) {
+      session.sandboxEnabled = options.sandboxEnabled;
+    }
+
     if (effectiveProvider === "codex" && codexOptions) {
       session.codexSettings = {
         approvalPolicy: codexOptions.approvalPolicy,
@@ -466,6 +475,7 @@ export class SessionManager {
           ? s.process.model
           : undefined,
         codexSettings: s.codexSettings,
+        sandboxEnabled: s.sandboxEnabled,
         pendingPermission,
       };
     });

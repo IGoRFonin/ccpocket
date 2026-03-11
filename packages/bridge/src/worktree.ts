@@ -1,6 +1,7 @@
 import { execFileSync, execSync } from "node:child_process";
 import { existsSync, readFileSync, mkdirSync, cpSync, readdirSync, statSync, realpathSync } from "node:fs";
 import { join, dirname, basename, relative, resolve } from "node:path";
+import { parseCcpocketConfig, toGtrConfig } from "./ccpocket-config.js";
 
 // ---- Types ----
 
@@ -191,6 +192,20 @@ export function copyConfiguredFiles(
   }
 }
 
+// ---- Config Resolution ----
+
+/**
+ * Resolve worktree configuration with priority:
+ *   .ccpocket.toml [worktree] > .gtrconfig
+ */
+export function getWorktreeConfig(projectPath: string): GtrConfig {
+  const ccpocket = parseCcpocketConfig(projectPath);
+  if (ccpocket.worktree) {
+    return toGtrConfig(ccpocket);
+  }
+  return parseGtrConfig(projectPath);
+}
+
 // ---- Core Worktree Operations ----
 
 /** Resolve a project path, following symlinks to get the real path. */
@@ -234,8 +249,8 @@ export function createWorktree(
     });
   }
 
-  // Parse .gtrconfig and apply copy/hooks
-  const config = parseGtrConfig(resolvedProject);
+  // Parse config (.ccpocket.toml > .gtrconfig) and apply copy/hooks
+  const config = getWorktreeConfig(resolvedProject);
   copyConfiguredFiles(resolvedProject, wtPath, config);
 
   // Run postCreate hooks
@@ -264,7 +279,7 @@ export function removeWorktree(projectPath: string, wtPath: string): void {
   const resolvedProject = resolveProject(projectPath);
 
   // Run preRemove hooks
-  const config = parseGtrConfig(resolvedProject);
+  const config = getWorktreeConfig(resolvedProject);
   for (const cmd of config.hook.preRemove) {
     try {
       execSync(cmd, { cwd: wtPath, encoding: "utf-8", stdio: "pipe" });

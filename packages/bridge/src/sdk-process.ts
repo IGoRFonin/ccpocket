@@ -16,6 +16,7 @@ import {
   getValidClaudeAccessToken,
   validateClaudeAccessToken,
 } from "./usage.js";
+import { buildSandboxSettings } from "./ccpocket-config.js";
 
 // Tools that are auto-approved in acceptEdits mode
 export const ACCEPT_EDITS_AUTO_APPROVE = new Set([
@@ -232,6 +233,8 @@ export interface StartOptions {
   resumeSessionAt?: string;
   /** Text to send as the first user message immediately after session starts. */
   initialInput?: string;
+  /** Enable OS-level sandbox for Claude Code. Details loaded from .ccpocket.toml. */
+  sandboxEnabled?: boolean;
 }
 
 export interface RewindFilesResult {
@@ -570,6 +573,11 @@ export class SdkProcess extends EventEmitter<SdkProcessEvents> {
         settingSources: ["user", "project", "local"],
         enableFileCheckpointing: true,
         ...(options?.resumeSessionAt ? { resumeSessionAt: options.resumeSessionAt } : {}),
+        ...(options?.sandboxEnabled === true
+          ? { sandbox: buildSandboxSettings(projectPath) }
+          : options?.sandboxEnabled === false
+            ? { sandbox: { enabled: false } }
+            : {}),
       },
     });
 

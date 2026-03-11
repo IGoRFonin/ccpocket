@@ -15,6 +15,7 @@ import {
   removeWorktree,
   worktreeExists,
   copyConfiguredFiles,
+  getWorktreeConfig,
 } from "./worktree.js";
 
 // ---- parseGtrConfig ----
@@ -132,6 +133,64 @@ describe("parseGtrConfig", () => {
     );
     const config = parseGtrConfig(tempDir);
     expect(config.copy.include).toEqual(["*.md"]);
+  });
+});
+
+// ---- getWorktreeConfig (.ccpocket.toml > .gtrconfig) ----
+
+describe("getWorktreeConfig", () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = join(tmpdir(), `gtr-wt-cfg-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tempDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("falls back to .gtrconfig when .ccpocket.toml is missing", () => {
+    writeFileSync(
+      join(tempDir, ".gtrconfig"),
+      "[copy]\ninclude = old.txt\n[hooks]\npostCreate = echo old\n",
+    );
+    const config = getWorktreeConfig(tempDir);
+    expect(config.copy.include).toEqual(["old.txt"]);
+    expect(config.hook.postCreate).toEqual(["echo old"]);
+  });
+
+  it("uses .ccpocket.toml when it has [worktree] section", () => {
+    writeFileSync(
+      join(tempDir, ".gtrconfig"),
+      "[copy]\ninclude = old.txt\n",
+    );
+    writeFileSync(
+      join(tempDir, ".ccpocket.toml"),
+      '[worktree.copy]\ninclude = ["new.txt"]\n\n[worktree.hooks]\npostCreate = "echo new"\n',
+    );
+    const config = getWorktreeConfig(tempDir);
+    expect(config.copy.include).toEqual(["new.txt"]);
+    expect(config.hook.postCreate).toEqual(["echo new"]);
+  });
+
+  it("falls back to .gtrconfig when .ccpocket.toml has no [worktree]", () => {
+    writeFileSync(
+      join(tempDir, ".gtrconfig"),
+      "[copy]\ninclude = fallback.txt\n",
+    );
+    writeFileSync(
+      join(tempDir, ".ccpocket.toml"),
+      "[sandbox]\nautoAllowBash = true\n",
+    );
+    const config = getWorktreeConfig(tempDir);
+    expect(config.copy.include).toEqual(["fallback.txt"]);
+  });
+
+  it("returns empty config when neither file exists", () => {
+    const config = getWorktreeConfig(tempDir);
+    expect(config.copy.include).toEqual([]);
+    expect(config.hook.postCreate).toEqual([]);
   });
 });
 
