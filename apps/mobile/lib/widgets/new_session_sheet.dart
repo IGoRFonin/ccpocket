@@ -265,7 +265,8 @@ class _NewSessionSheetContentState extends State<_NewSessionSheetContent> {
 
   // Codex-specific options
   String? _selectedModel;
-  var _sandboxMode = SandboxMode.on;
+  var _claudeSandboxMode = SandboxMode.off; // Claude default = OFF
+  var _codexSandboxMode = SandboxMode.on; // Codex default = ON
   ReasoningEffort? _modelReasoningEffort;
   bool _networkAccessEnabled = true;
   WebSearchMode? _webSearchMode;
@@ -276,6 +277,17 @@ class _NewSessionSheetContentState extends State<_NewSessionSheetContent> {
   // Inline validation errors
   String? _maxTurnsError;
   String? _maxBudgetError;
+
+  // Provider-aware sandbox accessor (keeps existing `_sandboxMode` usage intact)
+  SandboxMode get _sandboxMode =>
+      _provider == Provider.claude ? _claudeSandboxMode : _codexSandboxMode;
+  set _sandboxMode(SandboxMode v) {
+    if (_provider == Provider.claude) {
+      _claudeSandboxMode = v;
+    } else {
+      _codexSandboxMode = v;
+    }
+  }
 
   bool get _hasPath => _pathController.text.trim().isNotEmpty;
 
@@ -419,7 +431,11 @@ class _NewSessionSheetContentState extends State<_NewSessionSheetContent> {
     _useWorktree = p.useWorktree || p.existingWorktreePath != null;
     _branchController.text = p.worktreeBranch ?? "";
     _selectedModel = _codexModelList.contains(p.model) ? p.model : null;
-    _sandboxMode = p.sandboxMode ?? _sandboxMode;
+    if (p.provider == Provider.claude) {
+      _claudeSandboxMode = p.sandboxMode ?? SandboxMode.off;
+    } else {
+      _codexSandboxMode = p.sandboxMode ?? SandboxMode.on;
+    }
     _modelReasoningEffort = p.modelReasoningEffort;
     _networkAccessEnabled = p.networkAccessEnabled ?? _networkAccessEnabled;
     _webSearchMode = p.webSearchMode;
