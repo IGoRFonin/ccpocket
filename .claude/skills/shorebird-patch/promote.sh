@@ -22,7 +22,11 @@ echo "Patch number: $PATCH_NUMBER"
 echo "Track: staging → stable"
 echo ""
 
-shorebird patch promote \
+# Ensure we are in the Flutter app directory (where shorebird.yaml lives)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/../../../apps/mobile"
+
+shorebird patches promote \
   --release-version="$RELEASE_VERSION" \
   --patch-number="$PATCH_NUMBER"
 
