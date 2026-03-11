@@ -1043,6 +1043,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToReadClipboard => 'Failed to read clipboard';
 
   @override
+  String imageLimitReached(int max) {
+    return 'Maximum $max images allowed';
+  }
+
+  @override
+  String imageLimitTruncated(int max, int dropped) {
+    return 'Only first $max images attached ($dropped dropped)';
+  }
+
+  @override
   String get selectFromGallery => 'Select from Gallery';
 
   @override

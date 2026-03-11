@@ -475,6 +475,19 @@
   "failedToLoadImage": "画像の読み込みに失敗しました",
   "noImageInClipboard": "クリップボードに画像がありません",
   "failedToReadClipboard": "クリップボードの読み取りに失敗しました",
+  "imageLimitReached": "画像は最大{max}枚までです",
+  "@imageLimitReached": {
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "imageLimitTruncated": "最初の{max}枚のみ添付しました（{dropped}枚を除外）",
+  "@imageLimitTruncated": {
+    "placeholders": {
+      "max": {"type": "int"},
+      "dropped": {"type": "int"}
+    }
+  },
   "selectFromGallery": "ギャラリーから選択",
   "pasteFromClipboard": "クリップボードから貼付",
 

@@ -1029,6 +1029,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get failedToReadClipboard => 'クリップボードの読み取りに失敗しました';
 
   @override
+  String imageLimitReached(int max) {
+    return '画像は最大$max枚までです';
+  }
+
+  @override
+  String imageLimitTruncated(int max, int dropped) {
+    return '最初の$max枚のみ添付しました（$dropped枚を除外）';
+  }
+
+  @override
   String get selectFromGallery => 'ギャラリーから選択';
 
   @override

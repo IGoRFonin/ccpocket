@@ -400,6 +400,19 @@
   "failedToLoadImage": "Failed to load image",
   "noImageInClipboard": "No image in clipboard",
   "failedToReadClipboard": "Failed to read clipboard",
+  "imageLimitReached": "Maximum {max} images allowed",
+  "@imageLimitReached": {
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "imageLimitTruncated": "Only first {max} images attached ({dropped} dropped)",
+  "@imageLimitTruncated": {
+    "placeholders": {
+      "max": {"type": "int"},
+      "dropped": {"type": "int"}
+    }
+  },
   "selectFromGallery": "Select from Gallery",
   "pasteFromClipboard": "Paste from Clipboard",
 

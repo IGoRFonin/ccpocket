@@ -327,36 +327,81 @@ class ChatInputWithOverlays extends HookWidget {
     }
 
     Future<void> pickImageFromGallery() async {
+      const maxImages = 5;
+      final currentCount = attachedImages.value.length;
+      final remaining = maxImages - currentCount;
+
+      if (remaining <= 0) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).imageLimitReached(maxImages),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
+      final List<XFile> picked = await picker.pickMultiImage(
         maxWidth: 2048,
         maxHeight: 2048,
         imageQuality: 85,
       );
 
-      if (image != null) {
-        final bytes = await image.readAsBytes();
+      if (picked.isEmpty) return;
+
+      // Truncate to remaining slots
+      final truncated = picked.length > remaining;
+      final filesToAdd = picked.take(remaining).toList();
+
+      final newImages = <({Uint8List bytes, String mimeType})>[];
+      for (final file in filesToAdd) {
+        final bytes = await file.readAsBytes();
         if (!context.mounted) return;
+        final mimeType = _detectMimeType(bytes, file.path);
+        newImages.add((bytes: bytes, mimeType: mimeType));
+      }
 
-        // Determine mime type from actual bytes (magic bytes), not extension.
-        // On Android, image_picker may re-encode to JPEG while keeping a .png
-        // extension, causing API errors when media_type doesn't match content.
-        final mimeType = _detectMimeType(bytes, image.path);
+      final updated = [...attachedImages.value, ...newImages];
+      attachedImages.value = updated;
 
-        // Add to list (append, not replace)
-        final updated = [
-          ...attachedImages.value,
-          (bytes: bytes, mimeType: mimeType),
-        ];
-        attachedImages.value = updated;
-
-        // Persist image draft
+      // Persist image draft
+      if (context.mounted) {
         context.read<DraftService>().saveImageDraft(sessionId, updated);
+
+        if (truncated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).imageLimitTruncated(
+                  maxImages,
+                  picked.length - filesToAdd.length,
+                ),
+              ),
+            ),
+          );
+        }
       }
     }
 
     Future<void> pasteFromClipboard() async {
+      const maxImages = 5;
+      if (attachedImages.value.length >= maxImages) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).imageLimitReached(maxImages),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final clipboard = SystemClipboard.instance;
       if (clipboard == null) {
         if (context.mounted) {

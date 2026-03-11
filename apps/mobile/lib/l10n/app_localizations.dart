@@ -2012,6 +2012,18 @@ abstract class AppLocalizations {
   /// **'クリップボードの読み取りに失敗しました'**
   String get failedToReadClipboard;
 
+  /// No description provided for @imageLimitReached.
+  ///
+  /// In ja, this message translates to:
+  /// **'画像は最大{max}枚までです'**
+  String imageLimitReached(int max);
+
+  /// No description provided for @imageLimitTruncated.
+  ///
+  /// In ja, this message translates to:
+  /// **'最初の{max}枚のみ添付しました（{dropped}枚を除外）'**
+  String imageLimitTruncated(int max, int dropped);
+
   /// No description provided for @selectFromGallery.
   ///
   /// In ja, this message translates to:
