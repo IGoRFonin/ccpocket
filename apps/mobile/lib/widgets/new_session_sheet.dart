@@ -318,7 +318,8 @@ class _NewSessionSheetContentState extends State<_NewSessionSheetContent> {
   }
 
   /// Whether the project list has more items than the default collapsed count.
-  bool get _canExpandProjects => _allMergedProjects.length > _defaultRecentProjects;
+  bool get _canExpandProjects =>
+      _allMergedProjects.length > _defaultRecentProjects;
 
   @override
   void initState() {
@@ -554,7 +555,7 @@ class _NewSessionSheetContentState extends State<_NewSessionSheetContent> {
           ? _selectedWorktree?.worktreePath
           : null,
       model: isCodex ? _selectedModel : null,
-      sandboxMode: isCodex ? _sandboxMode : null,
+      sandboxMode: _sandboxMode,
       modelReasoningEffort: isCodex ? _modelReasoningEffort : null,
       networkAccessEnabled: isCodex ? _networkAccessEnabled : null,
       webSearchMode: isCodex ? _webSearchMode : null,
@@ -1275,108 +1276,73 @@ class _OptionsSection extends StatelessWidget {
               ),
             ),
           ),
-          // Primary controls: Permission (Claude) / Approval+Sandbox (Codex)
-          if (provider == Provider.claude)
-            DropdownButtonFormField<PermissionMode>(
-              key: const ValueKey('dialog_permission_mode'),
-              initialValue: permissionMode,
-              decoration: buildInputDecoration(l.permission),
-              items: PermissionMode.values
-                  .map(
-                    (m) => DropdownMenuItem(
-                      value: m,
-                      child: Row(
-                        children: [
-                          Icon(switch (m) {
-                            PermissionMode.defaultMode => Icons.tune,
-                            PermissionMode.plan => Icons.assignment,
-                            PermissionMode.acceptEdits => Icons.edit_note,
-                            PermissionMode.bypassPermissions => Icons.flash_on,
-                          }, size: 16),
-                          const SizedBox(width: 8),
-                          Text(m.label, style: const TextStyle(fontSize: 13)),
-                        ],
-                      ),
+          // Primary controls: Permission + Sandbox (shared for both providers)
+          DropdownButtonFormField<PermissionMode>(
+            key: ValueKey(
+              'dialog_${provider == Provider.codex ? "codex_" : ""}permission_mode',
+            ),
+            initialValue: permissionMode,
+            decoration: buildInputDecoration(l.permission),
+            items: PermissionMode.values
+                .map(
+                  (m) => DropdownMenuItem(
+                    value: m,
+                    child: Row(
+                      children: [
+                        Icon(switch (m) {
+                          PermissionMode.defaultMode => Icons.tune,
+                          PermissionMode.plan => Icons.assignment,
+                          PermissionMode.acceptEdits => Icons.edit_note,
+                          PermissionMode.bypassPermissions => Icons.flash_on,
+                        }, size: 16),
+                        const SizedBox(width: 8),
+                        Text(m.label, style: const TextStyle(fontSize: 13)),
+                      ],
                     ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  onPermissionModeChanged(value);
-                }
-              },
-            ),
-          if (provider == Provider.codex)
-            Column(
-              children: [
-                DropdownButtonFormField<PermissionMode>(
-                  key: const ValueKey('dialog_codex_permission_mode'),
-                  initialValue: permissionMode,
-                  decoration: buildInputDecoration(l.permission),
-                  items: PermissionMode.values
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m,
-                          child: Row(
-                            children: [
-                              Icon(switch (m) {
-                                PermissionMode.defaultMode => Icons.tune,
-                                PermissionMode.plan => Icons.assignment,
-                                PermissionMode.acceptEdits => Icons.edit_note,
-                                PermissionMode.bypassPermissions =>
-                                  Icons.flash_on,
-                              }, size: 16),
-                              const SizedBox(width: 8),
-                              Text(
-                                m.label,
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      onPermissionModeChanged(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<SandboxMode>(
-                  key: const ValueKey('dialog_codex_sandbox'),
-                  initialValue: sandboxMode,
-                  decoration: buildInputDecoration(l.sandbox),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  items: SandboxMode.values
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m,
-                          child: Row(
-                            children: [
-                              Icon(switch (m) {
-                                SandboxMode.on => Icons.shield_outlined,
-                                SandboxMode.off => Icons.warning_amber,
-                              }, size: 16),
-                              const SizedBox(width: 8),
-                              Text(
-                                m.label,
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) onSandboxModeChanged(value);
-                  },
-                ),
-              ],
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value != null) {
+                onPermissionModeChanged(value);
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<SandboxMode>(
+            key: const ValueKey('dialog_sandbox'),
+            initialValue: sandboxMode,
+            decoration: buildInputDecoration(l.sandbox),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
+            items: (provider == Provider.claude
+                    ? SandboxMode.values.reversed
+                    : SandboxMode.values)
+                .map((m) {
+              final isClaude = provider == Provider.claude;
+              final icon = m == SandboxMode.on
+                  ? Icons.shield_outlined
+                  : (isClaude ? Icons.code : Icons.warning_amber);
+              final label = isClaude
+                  ? (m == SandboxMode.on ? 'Sandbox (Safe Mode)' : 'Standard')
+                  : m.label;
+              return DropdownMenuItem(
+                value: m,
+                child: Row(
+                  children: [
+                    Icon(icon, size: 16),
+                    const SizedBox(width: 8),
+                    Text(label, style: const TextStyle(fontSize: 13)),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) onSandboxModeChanged(value);
+            },
+          ),
           const SizedBox(height: 8),
           // Worktree toggle (shared)
           Align(

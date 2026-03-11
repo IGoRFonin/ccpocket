@@ -52,7 +52,9 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
        super(
          ChatSessionState(
            permissionMode: initialPermissionMode ?? PermissionMode.defaultMode,
-           sandboxMode: initialSandboxMode ?? SandboxMode.on,
+           sandboxMode:
+               initialSandboxMode ??
+               (provider == Provider.codex ? SandboxMode.on : SandboxMode.off),
            inPlanMode: initialPermissionMode == PermissionMode.plan,
          ),
        ) {
@@ -398,6 +400,7 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
       unawaited(
         _SessionSettingsHelper.save(update.claudeSessionId!, {
           'permissionMode': current.permissionMode.value,
+          'sandboxMode': current.sandboxMode.value,
         }),
       );
     }
@@ -649,14 +652,18 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
     }
   }
 
-  /// Change sandbox mode for Codex sessions.
-  /// Bridge applies this safely without forcing an in-place thread restart.
+  /// Change sandbox mode (Claude & Codex).
+  /// Bridge destroys and resumes the session with new sandbox settings.
   void setSandboxMode(SandboxMode mode) {
-    if (!isCodex) return;
     emit(state.copyWith(sandboxMode: mode));
     _bridge.send(
       ClientMessage.setSandboxMode(mode.value, sessionId: sessionId),
     );
+    // Persist per-session so that future resumes use this mode.
+    final claudeSid = state.claudeSessionId;
+    if (claudeSid != null && claudeSid.isNotEmpty) {
+      _SessionSettingsHelper.save(claudeSid, {'sandboxMode': mode.value});
+    }
   }
 
   /// Stop the session.

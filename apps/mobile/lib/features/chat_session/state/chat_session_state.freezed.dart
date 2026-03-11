@@ -20,7 +20,7 @@ mixin _$ChatSessionState {
  ApprovalState get approval;// Session metadata
  String? get claudeSessionId; String? get projectPath; String? get gitBranch;// Flags
  bool get pastHistoryLoaded; bool get bulkLoading; bool get inPlanMode; bool get collapseToolResults;// Permission mode selected by the user
- PermissionMode get permissionMode;// Sandbox mode for Codex sessions
+ PermissionMode get permissionMode;// Sandbox mode (Claude default=off, Codex default=on; set via cubit)
  SandboxMode get sandboxMode;// Tool use IDs hidden by tool_use_summary (subagent compression)
  Set<String> get hiddenToolUseIds;// Rewind preview (dry-run result)
  RewindPreviewMessage? get rewindPreview;// Cost tracking
@@ -269,7 +269,7 @@ class _ChatSessionState implements ChatSessionState {
 @override@JsonKey() final  bool collapseToolResults;
 // Permission mode selected by the user
 @override@JsonKey() final  PermissionMode permissionMode;
-// Sandbox mode for Codex sessions
+// Sandbox mode (Claude default=off, Codex default=on; set via cubit)
 @override@JsonKey() final  SandboxMode sandboxMode;
 // Tool use IDs hidden by tool_use_summary (subagent compression)
  final  Set<String> _hiddenToolUseIds;

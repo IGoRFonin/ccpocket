@@ -17,7 +17,8 @@ import '../../services/chat_message_handler.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/session_name_title.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/new_session_sheet.dart' show permissionModeFromRaw;
+import '../../widgets/new_session_sheet.dart'
+    show permissionModeFromRaw, sandboxModeFromRaw;
 import '../../widgets/approval_bar.dart';
 import '../../widgets/bubbles/ask_user_question_widget.dart';
 import '../../widgets/message_bubble.dart';
@@ -53,6 +54,7 @@ class ClaudeSessionScreen extends StatefulWidget {
   final String? worktreePath;
   final bool isPending;
   final String? initialPermissionMode;
+  final String? initialSandboxMode;
 
   /// Notifier from the parent that may already hold a [SystemMessage]
   /// with subtype `session_created` (race condition fix).
@@ -66,6 +68,7 @@ class ClaudeSessionScreen extends StatefulWidget {
     this.worktreePath,
     this.isPending = false,
     this.initialPermissionMode,
+    this.initialSandboxMode,
     this.pendingSessionCreated,
   });
 
@@ -79,6 +82,7 @@ class _ClaudeSessionScreenState extends State<ClaudeSessionScreen> {
   late String? _gitBranch;
   late bool _isPending;
   PermissionMode? _permissionMode;
+  SandboxMode? _sandboxMode;
   StreamSubscription<ServerMessage>? _pendingSub;
   StreamSubscription<ServerMessage>? _sessionSwitchSub;
 
@@ -90,6 +94,7 @@ class _ClaudeSessionScreenState extends State<ClaudeSessionScreen> {
     _gitBranch = widget.gitBranch;
     _isPending = widget.isPending;
     _permissionMode = permissionModeFromRaw(widget.initialPermissionMode);
+    _sandboxMode = sandboxModeFromRaw(widget.initialSandboxMode);
 
     if (_isPending) {
       _listenForSessionCreated();
@@ -171,13 +176,14 @@ class _ClaudeSessionScreenState extends State<ClaudeSessionScreen> {
       _gitBranch = msg.worktreeBranch ?? _gitBranch;
       _permissionMode =
           permissionModeFromRaw(msg.permissionMode) ?? _permissionMode;
+      _sandboxMode = sandboxModeFromRaw(msg.sandboxMode) ?? _sandboxMode;
       _isPending = false;
     });
     _pendingSub?.cancel();
     _pendingSub = null;
   }
 
-  /// Switch to a new session (e.g. after clear context).
+  /// Switch to a new session (e.g. after clear context / sandbox toggle).
   void _switchSession(SystemMessage msg) {
     setState(() {
       _sessionId = msg.sessionId!;
@@ -185,6 +191,7 @@ class _ClaudeSessionScreenState extends State<ClaudeSessionScreen> {
       _gitBranch = msg.worktreeBranch ?? _gitBranch;
       _permissionMode =
           permissionModeFromRaw(msg.permissionMode) ?? _permissionMode;
+      _sandboxMode = sandboxModeFromRaw(msg.sandboxMode) ?? _sandboxMode;
     });
   }
 
@@ -222,6 +229,7 @@ class _ClaudeSessionScreenState extends State<ClaudeSessionScreen> {
       gitBranch: _gitBranch,
       worktreePath: _worktreePath,
       permissionMode: _permissionMode,
+      sandboxMode: _sandboxMode,
     );
   }
 }
@@ -233,6 +241,7 @@ class _ChatScreenProviders extends StatelessWidget {
   final String? gitBranch;
   final String? worktreePath;
   final PermissionMode? permissionMode;
+  final SandboxMode? sandboxMode;
 
   const _ChatScreenProviders({
     super.key,
@@ -241,6 +250,7 @@ class _ChatScreenProviders extends StatelessWidget {
     this.gitBranch,
     this.worktreePath,
     this.permissionMode,
+    this.sandboxMode,
   });
 
   @override
@@ -256,6 +266,7 @@ class _ChatScreenProviders extends StatelessWidget {
             bridge: bridge,
             streamingCubit: streamingCubit,
             initialPermissionMode: permissionMode,
+            initialSandboxMode: sandboxMode,
           ),
         ),
         BlocProvider.value(value: streamingCubit),

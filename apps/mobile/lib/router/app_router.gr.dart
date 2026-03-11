@@ -37,6 +37,7 @@ class ClaudeSessionRoute extends PageRouteInfo<ClaudeSessionRouteArgs> {
     String? worktreePath,
     bool isPending = false,
     String? initialPermissionMode,
+    String? initialSandboxMode,
     ValueNotifier<SystemMessage?>? pendingSessionCreated,
     List<PageRouteInfo>? children,
   }) : super(
@@ -49,6 +50,7 @@ class ClaudeSessionRoute extends PageRouteInfo<ClaudeSessionRouteArgs> {
            worktreePath: worktreePath,
            isPending: isPending,
            initialPermissionMode: initialPermissionMode,
+           initialSandboxMode: initialSandboxMode,
            pendingSessionCreated: pendingSessionCreated,
          ),
          initialChildren: children,
@@ -68,6 +70,7 @@ class ClaudeSessionRoute extends PageRouteInfo<ClaudeSessionRouteArgs> {
         worktreePath: args.worktreePath,
         isPending: args.isPending,
         initialPermissionMode: args.initialPermissionMode,
+        initialSandboxMode: args.initialSandboxMode,
         pendingSessionCreated: args.pendingSessionCreated,
       );
     },
@@ -83,6 +86,7 @@ class ClaudeSessionRouteArgs {
     this.worktreePath,
     this.isPending = false,
     this.initialPermissionMode,
+    this.initialSandboxMode,
     this.pendingSessionCreated,
   });
 
@@ -100,11 +104,13 @@ class ClaudeSessionRouteArgs {
 
   final String? initialPermissionMode;
 
+  final String? initialSandboxMode;
+
   final ValueNotifier<SystemMessage?>? pendingSessionCreated;
 
   @override
   String toString() {
-    return 'ClaudeSessionRouteArgs{key: $key, sessionId: $sessionId, projectPath: $projectPath, gitBranch: $gitBranch, worktreePath: $worktreePath, isPending: $isPending, initialPermissionMode: $initialPermissionMode, pendingSessionCreated: $pendingSessionCreated}';
+    return 'ClaudeSessionRouteArgs{key: $key, sessionId: $sessionId, projectPath: $projectPath, gitBranch: $gitBranch, worktreePath: $worktreePath, isPending: $isPending, initialPermissionMode: $initialPermissionMode, initialSandboxMode: $initialSandboxMode, pendingSessionCreated: $pendingSessionCreated}';
   }
 
   @override
@@ -118,6 +124,7 @@ class ClaudeSessionRouteArgs {
         worktreePath == other.worktreePath &&
         isPending == other.isPending &&
         initialPermissionMode == other.initialPermissionMode &&
+        initialSandboxMode == other.initialSandboxMode &&
         pendingSessionCreated == other.pendingSessionCreated;
   }
 
@@ -130,6 +137,7 @@ class ClaudeSessionRouteArgs {
       worktreePath.hashCode ^
       isPending.hashCode ^
       initialPermissionMode.hashCode ^
+      initialSandboxMode.hashCode ^
       pendingSessionCreated.hashCode;
 }
 

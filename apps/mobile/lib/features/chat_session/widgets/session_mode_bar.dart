@@ -21,8 +21,7 @@ class SessionModeBar extends StatelessWidget {
         status == ProcessStatus.running ||
         status == ProcessStatus.waitingApproval ||
         status == ProcessStatus.compacting;
-    // sandboxMode is only available for Codex
-    final sandboxMode = chatCubit.isCodex ? chatCubit.state.sandboxMode : null;
+    final sandboxMode = chatCubit.state.sandboxMode;
 
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -56,20 +55,19 @@ class SessionModeBar extends StatelessWidget {
                       currentMode: permissionMode,
                       onTap: () => showPermissionModeMenu(context, chatCubit),
                     ),
-                    if (sandboxMode != null) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: VerticalDivider(
-                          width: 1,
-                          thickness: 1,
-                          color: cs.outlineVariant.withValues(alpha: 0.4),
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        color: cs.outlineVariant.withValues(alpha: 0.4),
                       ),
-                      SandboxModeChip(
-                        currentMode: sandboxMode,
-                        onTap: () => showSandboxModeMenu(context, chatCubit),
-                      ),
-                    ],
+                    ),
+                    SandboxModeChip(
+                      currentMode: sandboxMode,
+                      provider: chatCubit.provider,
+                      onTap: () => showSandboxModeMenu(context, chatCubit),
+                    ),
                   ],
                 ),
               ),
@@ -375,8 +373,8 @@ Future<void> _confirmPermissionModeChange(
 }
 
 void showSandboxModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
-  if (!chatCubit.isCodex) return;
   final currentMode = chatCubit.state.sandboxMode;
+  final isClaude = chatCubit.provider != Provider.codex;
 
   showModalBottomSheet(
     context: context,
@@ -400,30 +398,30 @@ void showSandboxModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
                 ),
               ),
             ),
-            for (final mode in SandboxMode.values)
+            for (final mode
+                in isClaude
+                    ? SandboxMode.values.reversed
+                    : SandboxMode.values)
               ListTile(
                 leading: Icon(
-                  mode == SandboxMode.on
-                      ? Icons.shield_outlined
-                      : Icons.warning_amber,
+                  _sandboxMenuIcon(mode, isClaude),
                   color: mode == currentMode
                       ? sheetCs.primary
-                      : (mode == SandboxMode.off
-                            ? sheetCs.error
-                            : sheetCs.onSurfaceVariant),
+                      : _sandboxMenuIconColor(mode, isClaude, sheetCs),
                 ),
                 title: Text(
-                  mode == SandboxMode.on ? 'Sandbox On' : 'Sandbox Off',
+                  _sandboxMenuTitle(mode, isClaude),
                   style: TextStyle(
-                    color: mode == SandboxMode.off && currentMode != mode
+                    color:
+                        !isClaude &&
+                            mode == SandboxMode.off &&
+                            currentMode != mode
                         ? sheetCs.error
                         : null,
                   ),
                 ),
                 subtitle: Text(
-                  mode == SandboxMode.on
-                      ? 'Run commands in restricted environment'
-                      : 'Run commands natively (CAUTION)',
+                  _sandboxMenuSubtitle(mode, isClaude),
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: mode == currentMode
@@ -433,7 +431,12 @@ void showSandboxModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
                   Navigator.pop(sheetContext);
                   if (mode == currentMode) return;
                   HapticFeedback.lightImpact();
-                  _confirmSandboxModeChange(context, chatCubit, mode);
+                  _confirmSandboxModeChange(
+                    context,
+                    chatCubit,
+                    mode,
+                    isClaude: isClaude,
+                  );
                 },
               ),
             const SizedBox(height: 8),
@@ -444,21 +447,56 @@ void showSandboxModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
   );
 }
 
+IconData _sandboxMenuIcon(SandboxMode mode, bool isClaude) {
+  if (mode == SandboxMode.on) return Icons.shield_outlined;
+  return isClaude ? Icons.code : Icons.warning_amber;
+}
+
+Color _sandboxMenuIconColor(SandboxMode mode, bool isClaude, ColorScheme cs) {
+  if (mode == SandboxMode.off && !isClaude) return cs.error;
+  return cs.onSurfaceVariant;
+}
+
+String _sandboxMenuTitle(SandboxMode mode, bool isClaude) {
+  if (isClaude) {
+    return mode == SandboxMode.on ? 'Sandbox (Safe Mode)' : 'Standard';
+  }
+  return mode == SandboxMode.on ? 'Sandbox On' : 'Sandbox Off';
+}
+
+String _sandboxMenuSubtitle(SandboxMode mode, bool isClaude) {
+  if (isClaude) {
+    return mode == SandboxMode.on
+        ? 'Run commands in restricted environment'
+        : 'Run commands natively';
+  }
+  return mode == SandboxMode.on
+      ? 'Run commands in restricted environment'
+      : 'Run commands natively (CAUTION)';
+}
+
 /// Show confirmation dialog before changing sandbox mode, because
 /// the change requires a session restart (thread/resume with new sandbox).
 Future<void> _confirmSandboxModeChange(
   BuildContext context,
   ChatSessionCubit chatCubit,
-  SandboxMode mode,
-) async {
+  SandboxMode mode, {
+  bool isClaude = false,
+}) async {
+  final modeLabel = isClaude
+      ? (mode == SandboxMode.on ? 'Sandbox (Safe Mode)' : 'Standard')
+      : mode.label;
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
       final cs = Theme.of(dialogContext).colorScheme;
+      // For Codex, turning off sandbox is dangerous (red button).
+      // For Claude, turning off is standard — no red.
+      final useErrorStyle = mode == SandboxMode.off && !isClaude;
       return AlertDialog(
         title: const Text('Change Sandbox Mode'),
         content: Text(
-          'Switching to ${mode.label} will restart the session. '
+          'Switching to $modeLabel will restart the session. '
           'Your conversation will be preserved.',
         ),
         actions: [
@@ -468,7 +506,7 @@ Future<void> _confirmSandboxModeChange(
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: mode == SandboxMode.off
+            style: useErrorStyle
                 ? FilledButton.styleFrom(backgroundColor: cs.error)
                 : null,
             child: const Text('Restart'),
@@ -547,21 +585,27 @@ class PermissionModeChip extends StatelessWidget {
 
 class SandboxModeChip extends StatelessWidget {
   final SandboxMode currentMode;
+  final Provider? provider;
   final VoidCallback onTap;
 
   const SandboxModeChip({
     super.key,
     required this.currentMode,
+    this.provider,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isClaude = provider != Provider.codex;
 
     final (IconData icon, String label, Color fg) = switch (currentMode) {
       SandboxMode.on => (Icons.shield_outlined, 'Sandbox', cs.tertiary),
-      SandboxMode.off => (Icons.warning_amber, 'No SB', cs.error),
+      SandboxMode.off =>
+        isClaude
+            ? (Icons.code, 'Standard', cs.onSurfaceVariant)
+            : (Icons.warning_amber, 'No SB', cs.error),
     };
 
     return Material(

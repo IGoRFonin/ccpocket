@@ -32,7 +32,8 @@ abstract class ChatSessionState with _$ChatSessionState {
     // Permission mode selected by the user
     @Default(PermissionMode.defaultMode) PermissionMode permissionMode,
 
-    // Sandbox mode for Codex sessions
+    // Sandbox mode — Freezed default is .on but Cubit constructor overrides
+    // based on provider (Claude=off, Codex=on).
     @Default(SandboxMode.on) SandboxMode sandboxMode,
 
     // Tool use IDs hidden by tool_use_summary (subagent compression)
