@@ -1,4 +1,4 @@
-ccpocket is a mobile remote for Claude Code and Codex — the AI coding agents that write, edit, and manage code for you.
+ccpocket lets you start and run Claude Code and Codex sessions entirely from your phone. No laptop needed — just open the app, pick a project, and code from anywhere.
 
 This app is not affiliated with, endorsed by, or associated with Anthropic or OpenAI.
 

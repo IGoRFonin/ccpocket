@@ -1,6 +1,6 @@
 # CC Pocket
 
-CC Pocket lets you monitor and control Claude Code and Codex running on your Mac from your phone. Check progress, answer questions, approve tools, and review diffs from anywhere.
+CC Pocket lets you start and run Claude Code and Codex sessions entirely from your phone. No laptop needed to begin — just open the app, pick a project, and code from anywhere.
 
 [日本語版 README](README.ja.md)
 
@@ -33,17 +33,23 @@ If your workflow is "start an agent, let it run, step in only when needed," CC P
 - **Connect however you prefer** with saved machines, QR codes, mDNS discovery, or manual URLs
 - **Manage a remote Mac over SSH** for start, stop, and update flows when using launchd
 
-## What CC Pocket Can and Can't Do
+## CC Pocket vs Remote Control
 
-To set expectations clearly:
+Claude Code's built-in Remote Control hands off an existing terminal session to your phone — you start on your Mac and continue from mobile.
 
-| Capability | Supported |
-|------------|-----------|
-| Start a brand-new Claude Code or Codex session from CC Pocket | `Yes` |
-| Reopen and resume a past session from session history stored on your Mac | `Yes` |
-| Attach to an already-active session that was started directly on your Mac and keep controlling it live from CC Pocket | `No` |
+CC Pocket takes a different approach: **sessions start on your phone and run to completion there.** Your Mac works in the background; your phone is the primary interface.
 
-If you start a session on your Mac outside CC Pocket, you can resume it later from saved history, but CC Pocket does not take over that live session in progress.
+| | Remote Control | CC Pocket |
+|---|---------------|-----------|
+| Session origin | Start on Mac, hand off to phone | Start on phone |
+| Primary device | Mac (phone joins later) | Phone (Mac runs in background) |
+| Use case | Continue a desktop task on the go | Start coding from anywhere |
+| Setup | Built into Claude Code | Self-hosted Bridge Server (open-source) |
+
+**What this means in practice:**
+- You **can** start a brand-new session and run it entirely from your phone
+- You **can** reopen past sessions from history stored on your Mac
+- You **cannot** attach to a live session that was started directly on your Mac
 
 ## How It Works
 

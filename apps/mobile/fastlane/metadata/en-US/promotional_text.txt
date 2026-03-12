@@ -1,1 +1,1 @@
-Remote control Claude Code & Codex from your phone. Start sessions, approve tools at a glance, and write rich prompts with images.
+Start a Claude Code or Codex session right from your phone — no laptop needed. Approve tools, review diffs, and ship code from anywhere.
