@@ -117,6 +117,7 @@ enum PermissionMode {
   defaultMode('default', 'Default'),
   acceptEdits('acceptEdits', 'Accept Edits'),
   plan('plan', 'Plan'),
+  auto('auto', 'Auto'),
   bypassPermissions('bypassPermissions', 'Bypass All');
 
   final String value;
@@ -409,6 +410,7 @@ sealed class ServerMessage {
         codexModels:
             (json['codexModels'] as List?)?.map((e) => e as String).toList() ??
             const [],
+        bridgeVersion: json['bridgeVersion'] as String?,
       ),
       'recent_sessions' => RecentSessionsMessage(
         sessions: (json['sessions'] as List)
@@ -802,11 +804,16 @@ class SessionListMessage implements ServerMessage {
   final List<String> allowedDirs;
   final List<String> claudeModels;
   final List<String> codexModels;
+
+  /// Bridge server version (e.g. "1.16.0"). Null if Bridge is older than v1.17.0.
+  final String? bridgeVersion;
+
   const SessionListMessage({
     required this.sessions,
     this.allowedDirs = const [],
     this.claudeModels = const [],
     this.codexModels = const [],
+    this.bridgeVersion,
   });
 }
 

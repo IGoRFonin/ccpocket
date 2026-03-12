@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../models/messages.dart';
+import '../../../services/bridge_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../utils/bridge_version_check.dart';
 import '../state/chat_session_cubit.dart';
 
 class SessionModeBar extends StatelessWidget {
@@ -246,6 +248,7 @@ class _RotatingBorderPainter extends CustomPainter {
 void showPermissionModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
   final currentMode = chatCubit.state.permissionMode;
   final appColors = Theme.of(context).extension<AppColors>()!;
+  final bridgeVersion = context.read<BridgeService>().bridgeVersion;
 
   const purple = Color(0xFFBB86FC);
 
@@ -266,8 +269,13 @@ void showPermissionModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
           description: 'Analyze & plan without executing',
           color: appColors.statusPlan,
         ),
+        PermissionMode.auto: (
+          icon: Icons.bolt,
+          description: 'AI handles permissions autonomously',
+          color: const Color(0xFF64B5F6), // blue
+        ),
         PermissionMode.bypassPermissions: (
-          icon: Icons.flash_on,
+          icon: Icons.gpp_bad,
           description: 'Skip all permission prompts',
           color: Theme.of(context).colorScheme.error,
         ),
@@ -295,7 +303,15 @@ void showPermissionModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
                 ),
               ),
             ),
-            for (final mode in PermissionMode.values)
+            for (final mode in PermissionMode.values.where(
+              (m) =>
+                  m != PermissionMode.auto ||
+                  (!chatCubit.isCodex &&
+                      meetsMinVersion(
+                        bridgeVersion,
+                        kMinBridgeVersionAutoMode,
+                      )),
+            ))
               ListTile(
                 leading: Icon(
                   modeDetails[mode]!.icon,
@@ -399,9 +415,7 @@ void showSandboxModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
               ),
             ),
             for (final mode
-                in isClaude
-                    ? SandboxMode.values.reversed
-                    : SandboxMode.values)
+                in isClaude ? SandboxMode.values.reversed : SandboxMode.values)
               ListTile(
                 leading: Icon(
                   _sandboxMenuIcon(mode, isClaude),
@@ -546,7 +560,8 @@ class PermissionModeChip extends StatelessWidget {
       ),
       PermissionMode.acceptEdits => (Icons.edit_note, 'Edits', purple),
       PermissionMode.plan => (Icons.assignment, 'Plan', appColors.statusPlan),
-      PermissionMode.bypassPermissions => (Icons.flash_on, 'Bypass', cs.error),
+      PermissionMode.auto => (Icons.bolt, 'Auto', const Color(0xFF64B5F6)),
+      PermissionMode.bypassPermissions => (Icons.gpp_bad, 'Bypass', cs.error),
     };
 
     return Material(

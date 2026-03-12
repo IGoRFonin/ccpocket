@@ -65,6 +65,15 @@ describe("parseClientMessage", () => {
     });
   });
 
+  it("parses start with auto permission mode", () => {
+    const msg = parseClientMessage('{"type":"start","projectPath":"/p","permissionMode":"auto"}');
+    expect(msg).toEqual({
+      type: "start",
+      projectPath: "/p",
+      permissionMode: "auto",
+    });
+  });
+
   it("parses start with advanced Claude options", () => {
     const msg = parseClientMessage(
       '{"type":"start","projectPath":"/p","model":"claude-sonnet","effort":"high","maxTurns":5,"maxBudgetUsd":1.5,"fallbackModel":"claude-haiku","forkSession":true,"persistSession":false}',
@@ -128,6 +137,17 @@ describe("parseClientMessage", () => {
     expect(msg).toEqual({
       type: "set_permission_mode",
       mode: "plan",
+      sessionId: "s1",
+    });
+  });
+
+  it("parses set_permission_mode with auto mode", () => {
+    const msg = parseClientMessage(
+      '{"type":"set_permission_mode","mode":"auto","sessionId":"s1"}',
+    );
+    expect(msg).toEqual({
+      type: "set_permission_mode",
+      mode: "auto",
       sessionId: "s1",
     });
   });

@@ -15,6 +15,7 @@ String? _errorTitle(String? errorCode) {
     'auth_api_error' => 'Authentication Error',
     'codex_auth_required' => 'Codex Authentication Error',
     'path_not_allowed' => 'Path Not Allowed',
+    'bridge_update_required' => 'Bridge Update Required',
     _ => null,
   };
 }
@@ -27,6 +28,8 @@ String? _errorHint(String? errorCode) {
     'auth_api_error' => 'Run "claude auth login" on the Bridge machine',
     'codex_auth_required' => 'Check OPENAI_API_KEY on the Bridge machine',
     'path_not_allowed' => 'Update BRIDGE_ALLOWED_DIRS on the Bridge server',
+    'bridge_update_required' =>
+      'Restart the Bridge server to load the latest version',
     _ => null,
   };
 }
@@ -37,6 +40,7 @@ String? _copyableCommand(String? errorCode) {
     'auth_login_required' ||
     'auth_token_expired' ||
     'auth_api_error' => 'claude auth login',
+    'bridge_update_required' => 'npm run bridge',
     _ => null,
   };
 }

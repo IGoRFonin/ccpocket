@@ -41,7 +41,8 @@ export type PermissionMode =
   | "default"
   | "acceptEdits"
   | "bypassPermissions"
-  | "plan";
+  | "plan"
+  | "auto";
 
 export type Provider = "claude" | "codex";
 
@@ -336,7 +337,7 @@ export function parseClientMessage(data: string): ClientMessage | null {
       case "set_permission_mode":
         if (
           typeof msg.mode !== "string"
-          || !["default", "acceptEdits", "bypassPermissions", "plan"].includes(msg.mode)
+          || !["default", "acceptEdits", "bypassPermissions", "plan", "auto"].includes(msg.mode)
         ) return null;
         break;
       case "set_sandbox_mode":

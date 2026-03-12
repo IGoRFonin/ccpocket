@@ -552,7 +552,10 @@ export class SdkProcess extends EventEmitter<SdkProcessEvents> {
         cwd: projectPath,
         resume: options?.sessionId,
         continue: options?.continueMode,
-        permissionMode: options?.permissionMode ?? "default",
+        // Cast: our PermissionMode includes "auto" which the SDK type
+        // doesn't have yet, but the CLI already supports it.
+        permissionMode: (options?.permissionMode ?? "default") as
+          import("@anthropic-ai/claude-agent-sdk").PermissionMode,
         ...(options?.model ? { model: options.model } : {}),
         ...(options?.effort ? { effort: options.effort } : {}),
         ...(options?.maxTurns != null ? { maxTurns: options.maxTurns } : {}),
@@ -809,7 +812,11 @@ export class SdkProcess extends EventEmitter<SdkProcessEvents> {
     if (!this.queryInstance) {
       throw new Error("No active query instance");
     }
-    await this.queryInstance.setPermissionMode(mode);
+    // Cast: our PermissionMode includes "auto" which the SDK type
+    // doesn't have yet, but the CLI already supports it.
+    await this.queryInstance.setPermissionMode(
+      mode as import("@anthropic-ai/claude-agent-sdk").PermissionMode,
+    );
     this._permissionMode = mode;
     this.emitMessage({
       type: "system",

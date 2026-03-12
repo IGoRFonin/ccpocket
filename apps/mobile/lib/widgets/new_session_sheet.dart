@@ -8,6 +8,7 @@ import '../features/session_list/session_list_screen.dart'
     show recentProjects, shortenPath;
 import '../services/bridge_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/bridge_version_check.dart';
 import '../theme/provider_style.dart';
 
 /// Result returned when the user submits the new session sheet.
@@ -678,6 +679,7 @@ class _NewSessionSheetContentState extends State<_NewSessionSheetContent> {
           _OptionsSection(
             appColors: appColors,
             provider: pageProvider,
+            bridgeVersion: widget.bridge?.bridgeVersion,
             permissionMode: _permissionMode,
             onPermissionModeChanged: (value) {
               setState(() => _permissionMode = value);
@@ -1178,6 +1180,7 @@ class _PathInput extends StatelessWidget {
 class _OptionsSection extends StatelessWidget {
   final AppColors appColors;
   final Provider provider;
+  final String? bridgeVersion;
   final PermissionMode permissionMode;
   final ValueChanged<PermissionMode> onPermissionModeChanged;
   final bool useWorktree;
@@ -1231,6 +1234,7 @@ class _OptionsSection extends StatelessWidget {
   const _OptionsSection({
     required this.appColors,
     required this.provider,
+    this.bridgeVersion,
     required this.permissionMode,
     required this.onPermissionModeChanged,
     required this.useWorktree,
@@ -1300,6 +1304,15 @@ class _OptionsSection extends StatelessWidget {
             initialValue: permissionMode,
             decoration: buildInputDecoration(l.permission),
             items: PermissionMode.values
+                .where(
+                  (m) =>
+                      m != PermissionMode.auto ||
+                      (provider != Provider.codex &&
+                          meetsMinVersion(
+                            bridgeVersion,
+                            kMinBridgeVersionAutoMode,
+                          )),
+                )
                 .map(
                   (m) => DropdownMenuItem(
                     value: m,
@@ -1309,7 +1322,8 @@ class _OptionsSection extends StatelessWidget {
                           PermissionMode.defaultMode => Icons.tune,
                           PermissionMode.plan => Icons.assignment,
                           PermissionMode.acceptEdits => Icons.edit_note,
-                          PermissionMode.bypassPermissions => Icons.flash_on,
+                          PermissionMode.auto => Icons.bolt,
+                          PermissionMode.bypassPermissions => Icons.gpp_bad,
                         }, size: 16),
                         const SizedBox(width: 8),
                         Text(m.label, style: const TextStyle(fontSize: 13)),
@@ -1333,28 +1347,32 @@ class _OptionsSection extends StatelessWidget {
               fontSize: 13,
               color: Theme.of(context).colorScheme.onSurface,
             ),
-            items: (provider == Provider.claude
-                    ? SandboxMode.values.reversed
-                    : SandboxMode.values)
-                .map((m) {
-              final isClaude = provider == Provider.claude;
-              final icon = m == SandboxMode.on
-                  ? Icons.shield_outlined
-                  : (isClaude ? Icons.code : Icons.warning_amber);
-              final label = isClaude
-                  ? (m == SandboxMode.on ? 'Sandbox (Safe Mode)' : 'Standard')
-                  : m.label;
-              return DropdownMenuItem(
-                value: m,
-                child: Row(
-                  children: [
-                    Icon(icon, size: 16),
-                    const SizedBox(width: 8),
-                    Text(label, style: const TextStyle(fontSize: 13)),
-                  ],
-                ),
-              );
-            }).toList(),
+            items:
+                (provider == Provider.claude
+                        ? SandboxMode.values.reversed
+                        : SandboxMode.values)
+                    .map((m) {
+                      final isClaude = provider == Provider.claude;
+                      final icon = m == SandboxMode.on
+                          ? Icons.shield_outlined
+                          : (isClaude ? Icons.code : Icons.warning_amber);
+                      final label = isClaude
+                          ? (m == SandboxMode.on
+                                ? 'Sandbox (Safe Mode)'
+                                : 'Standard')
+                          : m.label;
+                      return DropdownMenuItem(
+                        value: m,
+                        child: Row(
+                          children: [
+                            Icon(icon, size: 16),
+                            const SizedBox(width: 8),
+                            Text(label, style: const TextStyle(fontSize: 13)),
+                          ],
+                        ),
+                      );
+                    })
+                    .toList(),
             onChanged: (value) {
               if (value != null) onSandboxModeChanged(value);
             },

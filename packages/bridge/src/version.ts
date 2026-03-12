@@ -8,6 +8,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, "..", "package.json");
 const packageJson = JSON.parse(readFileSync(packagePath, "utf-8"));
 
+/** The bridge package version from package.json (e.g. "1.16.0"). */
+export const BRIDGE_VERSION: string = packageJson.version;
+
 // Capture git info at startup (optional, may fail in non-git environments)
 function getGitInfo(): { commit?: string; branch?: string } {
   try {
