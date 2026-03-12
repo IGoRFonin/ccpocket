@@ -241,7 +241,7 @@ export class BridgeWebSocketServer {
     });
   }
 
-  private handleClientMessage(msg: ClientMessage, ws: WebSocket): void {
+  private async handleClientMessage(msg: ClientMessage, ws: WebSocket): Promise<void> {
     const incomingSessionId = this.extractSessionIdFromClientMessage(msg);
     const isActiveRuntimeSession =
       incomingSessionId != null && this.sessionManager.get(incomingSessionId) != null;
@@ -1784,7 +1784,7 @@ export class BridgeWebSocketServer {
 
       case "rename_session": {
         const name = (msg.name as string | null) || null;
-        this.handleRenameSession(ws, msg.sessionId, name, msg);
+        await this.handleRenameSession(ws, msg.sessionId, name, msg);
         break;
       }
     }

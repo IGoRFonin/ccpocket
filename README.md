@@ -119,76 +119,46 @@ In the app, choose a project and permission mode, then start a Claude Code or Co
 
 You can also enable **Worktree** to isolate a session in its own git worktree.
 
-## Project Configuration (`.ccpocket.toml`)
-
-You can place a `.ccpocket.toml` file in your project root to configure how the Bridge Server handles worktrees and sandbox settings for that project.
-
-A global `~/.ccpocket.toml` is also supported for user-wide defaults. Project-level settings take priority over global ones.
-
-### Worktree
+## Worktree Configuration (`.gtrconfig`)
 
 When starting a session, you can enable **Worktree** to automatically create a [git worktree](https://git-scm.com/docs/git-worktree) with its own branch and directory. This lets you run multiple sessions in parallel on the same project without conflicts.
 
-The `[worktree]` section configures file copying and lifecycle hooks:
+Place a [`.gtrconfig`](https://github.com/coderabbitai/git-worktree-runner?tab=readme-ov-file#team-configuration-gtrconfig) file in your project root to configure file copying and lifecycle hooks:
 
 | Section | Key | Description |
 |---------|-----|-------------|
-| `[worktree.copy]` | `include` | Glob patterns for files to copy (e.g. `.env`, config files) |
-| `[worktree.copy]` | `exclude` | Glob patterns to exclude from copy |
-| `[worktree.copy]` | `includeDirs` | Directory names to copy recursively |
-| `[worktree.copy]` | `excludeDirs` | Directory names to exclude |
-| `[worktree.hooks]` | `postCreate` | Shell command(s) to run after worktree creation |
-| `[worktree.hooks]` | `preRemove` | Shell command(s) to run before worktree deletion |
+| `[copy]` | `include` | Glob patterns for files to copy (e.g. `.env`, config files) |
+| `[copy]` | `exclude` | Glob patterns to exclude from copy |
+| `[copy]` | `includeDirs` | Directory names to copy recursively |
+| `[copy]` | `excludeDirs` | Directory names to exclude |
+| `[hook]` | `postCreate` | Shell command(s) to run after worktree creation |
+| `[hook]` | `preRemove` | Shell command(s) to run before worktree deletion |
 
 **Tip:** Adding `.claude/settings.local.json` to the `include` list is especially recommended. This carries over your MCP server configuration and permission settings to each worktree session automatically.
 
-### Sandbox (Claude Code)
-
-The `[sandbox]` section configures Claude Code's OS-level sandbox behavior when sandbox mode is enabled from the app.
-
-| Section | Key | Description |
-|---------|-----|-------------|
-| `[sandbox]` | `autoAllowBash` | Auto-approve bash commands inside sandbox (default: `true`) |
-| `[sandbox]` | `allowUnsandboxedCommands` | Allow specific commands to run outside sandbox (default: `false`) |
-| `[sandbox.network]` | `allowLocalBinding` | Allow binding to local ports |
-| `[sandbox.network]` | `allowedDomains` | List of allowed network domains |
-| `[sandbox.network]` | `allowUnixSockets` | List of allowed Unix socket paths |
-| `[sandbox.network]` | `allowAllUnixSockets` | Allow all Unix socket connections |
-| `[sandbox.filesystem]` | `allowWrite` | Additional paths to allow writing |
-| `[sandbox.filesystem]` | `denyWrite` | Paths to deny writing |
-| `[sandbox.filesystem]` | `denyRead` | Paths to deny reading |
-
 <details>
-<summary>Example <code>.ccpocket.toml</code></summary>
+<summary>Example <code>.gtrconfig</code></summary>
 
-```toml
-[worktree.copy]
+```ini
+[copy]
 # Claude Code settings (MCP servers, permissions, additional directories)
-include = [".claude/settings.local.json"]
-
-# Environment-specific config
-# include = ["apps/mobile/android/local.properties"]
+include = .claude/settings.local.json
 
 # Speed up worktree setup by copying node_modules
-includeDirs = ["node_modules"]
+includeDirs = node_modules
 
-[worktree.hooks]
+[hook]
 # Restore Flutter dependencies after worktree creation
-postCreate = "cd apps/mobile && flutter pub get"
-
-[sandbox]
-autoAllowBash = true
-
-[sandbox.network]
-# Allow the dev server to bind to local ports
-allowLocalBinding = true
+postCreate = cd apps/mobile && flutter pub get
 ```
 
 </details>
 
-### `.gtrconfig` Compatibility
+## Sandbox Configuration (Claude Code)
 
-If your project already uses a [`.gtrconfig`](https://github.com/coderabbitai/git-worktree-runner?tab=readme-ov-file#team-configuration-gtrconfig) file from [git-worktree-runner](https://github.com/coderabbitai/git-worktree-runner), the Bridge Server will still read it for worktree settings. When both files exist, `.ccpocket.toml` takes priority.
+When sandbox mode is enabled from the app, Claude Code uses its native `.claude/settings.json` (or `.claude/settings.local.json`) for detailed sandbox configuration. No Bridge-side config is needed.
+
+See the [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code) for the full `sandbox` schema.
 
 ## Ideal Use Cases
 

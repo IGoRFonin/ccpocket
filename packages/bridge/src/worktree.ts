@@ -1,7 +1,6 @@
 import { execFileSync, execSync } from "node:child_process";
 import { existsSync, readFileSync, mkdirSync, cpSync, readdirSync, statSync, realpathSync } from "node:fs";
 import { join, dirname, basename, relative, resolve } from "node:path";
-import { parseCcpocketConfig, toGtrConfig } from "./ccpocket-config.js";
 
 // ---- Types ----
 
@@ -194,15 +193,8 @@ export function copyConfiguredFiles(
 
 // ---- Config Resolution ----
 
-/**
- * Resolve worktree configuration with priority:
- *   .ccpocket.toml [worktree] > .gtrconfig
- */
+/** Resolve worktree configuration from .gtrconfig. */
 export function getWorktreeConfig(projectPath: string): GtrConfig {
-  const ccpocket = parseCcpocketConfig(projectPath);
-  if (ccpocket.worktree) {
-    return toGtrConfig(ccpocket);
-  }
   return parseGtrConfig(projectPath);
 }
 
@@ -249,7 +241,7 @@ export function createWorktree(
     });
   }
 
-  // Parse config (.ccpocket.toml > .gtrconfig) and apply copy/hooks
+  // Parse .gtrconfig and apply copy/hooks
   const config = getWorktreeConfig(resolvedProject);
   copyConfiguredFiles(resolvedProject, wtPath, config);
 

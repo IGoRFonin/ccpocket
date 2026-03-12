@@ -136,7 +136,7 @@ describe("parseGtrConfig", () => {
   });
 });
 
-// ---- getWorktreeConfig (.ccpocket.toml > .gtrconfig) ----
+// ---- getWorktreeConfig (.gtrconfig) ----
 
 describe("getWorktreeConfig", () => {
   let tempDir: string;
@@ -150,7 +150,7 @@ describe("getWorktreeConfig", () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("falls back to .gtrconfig when .ccpocket.toml is missing", () => {
+  it("reads .gtrconfig", () => {
     writeFileSync(
       join(tempDir, ".gtrconfig"),
       "[copy]\ninclude = old.txt\n[hooks]\npostCreate = echo old\n",
@@ -160,34 +160,7 @@ describe("getWorktreeConfig", () => {
     expect(config.hook.postCreate).toEqual(["echo old"]);
   });
 
-  it("uses .ccpocket.toml when it has [worktree] section", () => {
-    writeFileSync(
-      join(tempDir, ".gtrconfig"),
-      "[copy]\ninclude = old.txt\n",
-    );
-    writeFileSync(
-      join(tempDir, ".ccpocket.toml"),
-      '[worktree.copy]\ninclude = ["new.txt"]\n\n[worktree.hooks]\npostCreate = "echo new"\n',
-    );
-    const config = getWorktreeConfig(tempDir);
-    expect(config.copy.include).toEqual(["new.txt"]);
-    expect(config.hook.postCreate).toEqual(["echo new"]);
-  });
-
-  it("falls back to .gtrconfig when .ccpocket.toml has no [worktree]", () => {
-    writeFileSync(
-      join(tempDir, ".gtrconfig"),
-      "[copy]\ninclude = fallback.txt\n",
-    );
-    writeFileSync(
-      join(tempDir, ".ccpocket.toml"),
-      "[sandbox]\nautoAllowBash = true\n",
-    );
-    const config = getWorktreeConfig(tempDir);
-    expect(config.copy.include).toEqual(["fallback.txt"]);
-  });
-
-  it("returns empty config when neither file exists", () => {
+  it("returns empty config when .gtrconfig does not exist", () => {
     const config = getWorktreeConfig(tempDir);
     expect(config.copy.include).toEqual([]);
     expect(config.hook.postCreate).toEqual([]);

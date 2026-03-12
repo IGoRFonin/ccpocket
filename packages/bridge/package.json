@@ -52,7 +52,6 @@
     "@anthropic-ai/claude-agent-sdk": "^0.2.50",
     "bonjour-service": "^1.3.0",
     "qrcode": "^1.5.4",
-    "smol-toml": "^1.6.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
