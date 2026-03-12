@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/messages.dart';
 import '../utils/diff_parser.dart';
+import 'bubbles/image_preview.dart';
 
 /// Bottom input bar with slash-command button, text field, and action buttons.
 ///
@@ -407,13 +408,21 @@ class _ImagePreview extends StatelessWidget {
             return Stack(
               clipBehavior: Clip.none,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(
-                    images[index].bytes,
-                    height: 80,
-                    width: images.length == 1 ? null : 80,
-                    fit: BoxFit.cover,
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          FullScreenImageViewer(bytes: images[index].bytes),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      images[index].bytes,
+                      height: 80,
+                      width: 80,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 Positioned(
