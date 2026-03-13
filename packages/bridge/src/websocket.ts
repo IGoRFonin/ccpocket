@@ -24,6 +24,7 @@ import type { FirebaseAuthClient } from "./firebase-auth.js";
 import { type PushLocale, normalizePushLocale, t } from "./push-i18n.js";
 import { fetchAllUsage } from "./usage.js";
 import type { PromptHistoryBackupStore } from "./prompt-history-backup.js";
+import { getPackageVersion } from "./version.js";
 
 
 // ---- Available model lists (delivered to clients via session_list) ----
@@ -1888,14 +1889,14 @@ export class BridgeWebSocketServer {
   private sendSessionList(ws: WebSocket): void {
     this.pruneDebugEvents();
     const sessions = this.sessionManager.list();
-    this.send(ws, { type: "session_list", sessions, allowedDirs: this.allowedDirs, claudeModels: CLAUDE_MODELS, codexModels: CODEX_MODELS });
+    this.send(ws, { type: "session_list", sessions, allowedDirs: this.allowedDirs, claudeModels: CLAUDE_MODELS, codexModels: CODEX_MODELS, bridgeVersion: getPackageVersion() });
   }
 
   /** Broadcast session list to all connected clients. */
   private broadcastSessionList(): void {
     this.pruneDebugEvents();
     const sessions = this.sessionManager.list();
-    this.broadcast({ type: "session_list", sessions, allowedDirs: this.allowedDirs, claudeModels: CLAUDE_MODELS, codexModels: CODEX_MODELS });
+    this.broadcast({ type: "session_list", sessions, allowedDirs: this.allowedDirs, claudeModels: CLAUDE_MODELS, codexModels: CODEX_MODELS, bridgeVersion: getPackageVersion() });
   }
 
   private broadcastSessionMessage(sessionId: string, msg: ServerMessage): void {

@@ -4,6 +4,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../constants/app_constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/messages.dart';
 import '../../../services/draft_service.dart';
@@ -14,10 +15,12 @@ import '../state/session_list_state.dart';
 import 'section_header.dart';
 import 'session_filter_bar.dart';
 import 'session_list_empty_state.dart';
+import 'bridge_update_banner.dart';
 import 'session_reconnect_banner.dart';
 
 class HomeContent extends StatefulWidget {
   final BridgeConnectionState connectionState;
+  final String? bridgeVersion;
   final List<SessionInfo> sessions;
   final List<RecentSession> recentSessions;
   final Set<String> accumulatedProjectPaths;
@@ -66,6 +69,7 @@ class HomeContent extends StatefulWidget {
   const HomeContent({
     super.key,
     required this.connectionState,
+    this.bridgeVersion,
     required this.sessions,
     required this.recentSessions,
     required this.accumulatedProjectPaths,
@@ -101,6 +105,7 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   bool _isSearching = false;
+  bool _updateBannerDismissed = false;
   final _searchController = TextEditingController();
   SessionDisplayMode _displayMode = SessionDisplayMode.first;
 
@@ -142,6 +147,10 @@ class _HomeContentState extends State<HomeContent> {
       setState(() => _isSearching = false);
       _searchController.clear();
     }
+    // Reset dismiss state when reconnected (new bridgeVersion received)
+    if (widget.bridgeVersion != oldWidget.bridgeVersion) {
+      _updateBannerDismissed = false;
+    }
   }
 
   @override
@@ -160,6 +169,21 @@ class _HomeContentState extends State<HomeContent> {
     });
   }
 
+  Widget? _buildUpdateBanner() {
+    if (_updateBannerDismissed) return null;
+    if (!BridgeUpdateBanner.shouldShow(
+      widget.bridgeVersion,
+      AppConstants.expectedBridgeVersion,
+    )) {
+      return null;
+    }
+    return BridgeUpdateBanner(
+      currentVersion: widget.bridgeVersion!,
+      expectedVersion: AppConstants.expectedBridgeVersion,
+      onDismiss: () => setState(() => _updateBannerDismissed = true),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -168,6 +192,7 @@ class _HomeContentState extends State<HomeContent> {
     final hasRecentSessions = widget.recentSessions.isNotEmpty;
     final isReconnecting =
         widget.connectionState == BridgeConnectionState.reconnecting;
+    final updateBanner = _buildUpdateBanner();
 
     // Compute derived state
     // Exclude running sessions from recent list to avoid duplicates
@@ -211,6 +236,7 @@ class _HomeContentState extends State<HomeContent> {
           padding: const EdgeInsets.all(12),
           children: [
             if (isReconnecting) const SessionReconnectBanner(),
+            ?updateBanner,
             SectionHeader(
               icon: Icons.history,
               label: 'Recent Sessions',
@@ -227,6 +253,7 @@ class _HomeContentState extends State<HomeContent> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           if (isReconnecting) const SessionReconnectBanner(),
+          ?updateBanner,
           const SizedBox(height: 80),
           SessionListEmptyState(onNewSession: widget.onNewSession),
         ],
@@ -240,6 +267,7 @@ class _HomeContentState extends State<HomeContent> {
       padding: const EdgeInsets.all(12),
       children: [
         if (isReconnecting) const SessionReconnectBanner(),
+        ?updateBanner,
         if (hasRunningSessions) ...[
           SectionHeader(
             icon: Icons.play_circle_filled,

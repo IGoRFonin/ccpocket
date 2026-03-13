@@ -409,6 +409,7 @@ sealed class ServerMessage {
         codexModels:
             (json['codexModels'] as List?)?.map((e) => e as String).toList() ??
             const [],
+        bridgeVersion: json['bridgeVersion'] as String?,
       ),
       'recent_sessions' => RecentSessionsMessage(
         sessions: (json['sessions'] as List)
@@ -802,11 +803,13 @@ class SessionListMessage implements ServerMessage {
   final List<String> allowedDirs;
   final List<String> claudeModels;
   final List<String> codexModels;
+  final String? bridgeVersion;
   const SessionListMessage({
     required this.sessions,
     this.allowedDirs = const [],
     this.claudeModels = const [],
     this.codexModels = const [],
+    this.bridgeVersion,
   });
 }
 
@@ -1674,7 +1677,7 @@ class ClientMessage {
       'text': text,
       'sessionId': ?sessionId,
       if (images != null && images.isNotEmpty) 'images': images,
-      if (skill != null) 'skill': skill,
+      'skill': ?skill,
     });
   }
 

@@ -59,6 +59,7 @@ class BridgeService implements BridgeServiceBase {
   List<String> _allowedDirs = [];
   List<String> _claudeModels = [];
   List<String> _codexModels = [];
+  String? _bridgeVersion;
   UsageResultMessage? _lastUsageResult;
 
   // Diff image cache: survives screen navigation, cleared on session stop.
@@ -126,6 +127,7 @@ class BridgeService implements BridgeServiceBase {
   List<String> get allowedDirs => _allowedDirs;
   List<String> get claudeModels => _claudeModels;
   List<String> get codexModels => _codexModels;
+  String? get bridgeVersion => _bridgeVersion;
   UsageResultMessage? get lastUsageResult => _lastUsageResult;
 
   /// The last WebSocket URL used for connection (or reconnection).
@@ -181,12 +183,14 @@ class BridgeService implements BridgeServiceBase {
                 :final allowedDirs,
                 :final claudeModels,
                 :final codexModels,
+                :final bridgeVersion,
               ):
                 _sessions = sessions;
                 _sessionListController.add(_sessions);
                 _allowedDirs = allowedDirs;
                 _claudeModels = claudeModels;
                 _codexModels = codexModels;
+                _bridgeVersion = bridgeVersion;
               case RecentSessionsMessage(:final sessions, :final hasMore):
                 _recentSessionsHasMore = hasMore;
                 if (_appendMode) {
@@ -846,6 +850,7 @@ class BridgeService implements BridgeServiceBase {
     _channel?.sink.close();
     _channel = null;
     _setBridgeConnectionState(BridgeConnectionState.disconnected);
+    _bridgeVersion = null;
     clearDiffImageCache();
   }
 

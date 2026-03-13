@@ -38,6 +38,11 @@ export interface VersionInfo {
   gitBranch?: string;
 }
 
+/** Returns the package version string (e.g. "1.17.1"). */
+export function getPackageVersion(): string {
+  return packageJson.version;
+}
+
 export function getVersionInfo(serverStartedAt: number): VersionInfo {
   return {
     version: packageJson.version,
