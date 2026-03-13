@@ -750,34 +750,12 @@ class _SessionListScreenState extends State<SessionListScreen>
     }
 
     if (action == 'archive') {
-      _archiveSessionWithConfirm(session);
+      _archiveSession(session);
     }
   }
 
-  Future<void> _archiveSessionWithConfirm(RecentSession session) async {
+  void _archiveSession(RecentSession session) {
     if (_archivingSessionIds.contains(session.sessionId)) return;
-    final l = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.archiveConfirm),
-        content: Text(l.archiveConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.archive),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
     setState(() => _archivingSessionIds.add(session.sessionId));
     context.read<BridgeService>().archiveSession(
       sessionId: session.sessionId,
@@ -972,30 +950,7 @@ class _SessionListScreenState extends State<SessionListScreen>
   }
 
   void _stopSession(String sessionId) {
-    final l = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.stopSession),
-        content: Text(l.stopSessionConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.read<BridgeService>().stopSession(sessionId);
-            },
-            child: Text(l.stop),
-          ),
-        ],
-      ),
-    );
+    context.read<BridgeService>().stopSession(sessionId);
   }
 
   @override
@@ -1158,7 +1113,7 @@ class _SessionListScreenState extends State<SessionListScreen>
                           },
                           onResumeSession: _resumeSession,
                           onLongPressRecentSession: _showRecentSessionActions,
-                          onArchiveSession: _archiveSessionWithConfirm,
+                          onArchiveSession: _archiveSession,
                           onLongPressRunningSession: _showRunningSessionActions,
                           onSelectProject: (path) => context
                               .read<SessionListCubit>()

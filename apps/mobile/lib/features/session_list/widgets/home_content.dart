@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -247,18 +248,32 @@ class _HomeContentState extends State<HomeContent> {
           ),
           const SizedBox(height: 4),
           for (final session in widget.sessions)
-            Dismissible(
+            Slidable(
               key: ValueKey('running_session_${session.id}'),
-              direction: DismissDirection.endToStart,
-              background: const SizedBox.shrink(),
-              secondaryBackground: _StopSessionSwipeBackground(
-                color: Theme.of(context).colorScheme.error,
+              endActionPane: ActionPane(
+                motion: const BehindMotion(),
+                extentRatio: 0.18,
+                children: [
+                  CustomSlidableAction(
+                    onPressed: (_) => widget.onStopSession(session.id),
+                    backgroundColor: Colors.transparent,
+                    padding: EdgeInsets.zero,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.stop_circle_outlined,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              confirmDismiss: (_) async {
-                widget.onStopSession(session.id);
-                // Keep the card visible until the bridge status actually updates.
-                return false;
-              },
               child: RunningSessionCard(
                 session: session,
                 isUnseen: widget.unseenSessionIds.contains(session.id),
@@ -385,18 +400,32 @@ class _HomeContentState extends State<HomeContent> {
               )
             else
               for (final session in filteredSessions)
-                Dismissible(
+                Slidable(
                   key: ValueKey('recent_session_${session.sessionId}'),
-                  direction: DismissDirection.endToStart,
-                  background: const SizedBox.shrink(),
-                  secondaryBackground: _ArchiveSessionSwipeBackground(
-                    color: Theme.of(context).colorScheme.error,
+                  endActionPane: ActionPane(
+                    motion: const BehindMotion(),
+                    extentRatio: 0.18,
+                    children: [
+                      CustomSlidableAction(
+                        onPressed: (_) => widget.onArchiveSession(session),
+                        backgroundColor: Colors.transparent,
+                        padding: EdgeInsets.zero,
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.archive_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  confirmDismiss: (_) async {
-                    widget.onArchiveSession(session);
-                    // Keep the card visible; the archive flow handles removal.
-                    return false;
-                  },
                   child: RecentSessionCard(
                     session: session,
                     displayMode: _displayMode,
@@ -478,48 +507,6 @@ class _RecentSessionsEmptyResult extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ArchiveSessionSwipeBackground extends StatelessWidget {
-  final Color color;
-
-  const _ArchiveSessionSwipeBackground({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerRight,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Icon(Icons.archive_outlined, color: color),
-    );
-  }
-}
-
-class _StopSessionSwipeBackground extends StatelessWidget {
-  final Color color;
-
-  const _StopSessionSwipeBackground({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerRight,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Icon(Icons.stop_circle_outlined, color: color),
     );
   }
 }
