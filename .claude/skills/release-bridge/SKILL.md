@@ -68,6 +68,18 @@ git log $(git tag -l 'bridge/v*' --sort=-v:refname | head -1)..HEAD --oneline --
 
 `packages/bridge/package.json` の `version` をステップ 2 で決定したバージョンに更新する。
 
+### 4.5. Flutter 側の expectedBridgeVersion を同期
+
+`apps/mobile/lib/constants/app_constants.dart` の `expectedBridgeVersion` を
+ステップ 4 で設定した新バージョンに合わせて更新する。
+
+```dart
+static const String expectedBridgeVersion = 'X.Y.Z';  // ← 新バージョンに変更
+```
+
+これにより、アプリが古い Bridge に接続した際に更新バナーが正しく表示される。
+忘れるとアプリ側のバージョンチェックがずれたまま残る。
+
 ### 5. ローカル検証
 
 タグ push 前に、CD と同じチェックをローカルで実行する。
@@ -89,7 +101,7 @@ npm run bridge:build
 ### 6. コミット & タグ
 
 ```bash
-git add packages/bridge/package.json packages/bridge/CHANGELOG.md
+git add packages/bridge/package.json packages/bridge/CHANGELOG.md apps/mobile/lib/constants/app_constants.dart
 git commit -m "chore(bridge): release vX.Y.Z"
 git push origin main
 git tag bridge/vX.Y.Z
