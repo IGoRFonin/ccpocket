@@ -226,6 +226,7 @@ const _defaultCodexModels = <String>[
 
 /// Fallback Claude models when Bridge hasn't delivered a list yet.
 const _defaultClaudeModels = <String>[
+  'claude-opus-4-6[1m]',
   'claude-opus-4-6',
   'claude-sonnet-4-6',
   'claude-haiku-4-6',
