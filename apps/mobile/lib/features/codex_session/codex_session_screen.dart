@@ -672,6 +672,7 @@ class _CodexChatBody extends HookWidget {
                                     toolUseId: askId,
                                     input: askInput,
                                     onAnswer: answerQuestion,
+                                    scrollable: false,
                                   ),
                               if (pendingToolUseId != null)
                                 ApprovalBar(

@@ -13,12 +13,14 @@ class AskUserQuestionWidget extends StatefulWidget {
   final String toolUseId;
   final Map<String, dynamic> input;
   final void Function(String toolUseId, String result) onAnswer;
+  final bool scrollable;
 
   const AskUserQuestionWidget({
     super.key,
     required this.toolUseId,
     required this.input,
     required this.onAnswer,
+    this.scrollable = true,
   });
 
   @override
@@ -377,10 +379,7 @@ class _AskUserQuestionWidgetState extends State<AskUserQuestionWidget> {
                 if (_isMultiQuestion)
                   Text(
                     '${_currentPage + 1}/$totalPages',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: appColors.subtleText,
-                    ),
+                    style: TextStyle(fontSize: 11, color: appColors.subtleText),
                   ),
               ],
             ),
@@ -405,6 +404,7 @@ class _AskUserQuestionWidgetState extends State<AskUserQuestionWidget> {
                     if (index == questions.length) {
                       return _AskSummaryPage(
                         questions: questions,
+                        scrollable: widget.scrollable,
                         singleAnswers: _singleAnswers,
                         onResetAll: _resetAll,
                         onSubmitAll: _sendAllAnswers,
@@ -415,6 +415,7 @@ class _AskUserQuestionWidgetState extends State<AskUserQuestionWidget> {
                       question: questions[index] as Map<String, dynamic>,
                       questionIndex: index,
                       isMultiQuestion: true,
+                      scrollable: widget.scrollable,
                       singleAnswers: _singleAnswers,
                       multiAnswers: _multiAnswers,
                       customInputs: _customInputs,
@@ -434,6 +435,7 @@ class _AskUserQuestionWidgetState extends State<AskUserQuestionWidget> {
                 question: questions.first as Map<String, dynamic>,
                 questionIndex: 0,
                 isMultiQuestion: false,
+                scrollable: widget.scrollable,
                 singleAnswers: _singleAnswers,
                 multiAnswers: _multiAnswers,
                 customInputs: _customInputs,
@@ -477,6 +479,7 @@ class _AskQuestionLayout extends StatelessWidget {
   final Map<String, dynamic> question;
   final int questionIndex;
   final bool isMultiQuestion;
+  final bool scrollable;
   final bool alwaysShowTextInput;
   final Map<int, String> singleAnswers;
   final Map<int, Set<String>> multiAnswers;
@@ -493,6 +496,7 @@ class _AskQuestionLayout extends StatelessWidget {
     required this.question,
     required this.questionIndex,
     required this.isMultiQuestion,
+    required this.scrollable,
     required this.singleAnswers,
     required this.multiAnswers,
     required this.customInputs,
@@ -516,94 +520,96 @@ class _AskQuestionLayout extends StatelessWidget {
     final options = question['options'] as List<dynamic>? ?? const [];
     final isMulti = question['multiSelect'] as bool? ?? false;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (header != null && header.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: appColors.askIcon.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                header,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: appColors.askIcon,
-                ),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (header != null && header.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: appColors.askIcon.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              header,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: appColors.askIcon,
               ),
             ),
-          if (header != null && header.isNotEmpty) const SizedBox(height: 4),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
-          if (isMulti) ...[
-            const SizedBox(height: 2),
-            Text(
-              l.selectAllThatApply,
-              style: TextStyle(fontSize: 11, color: appColors.subtleText),
-            ),
-          ],
-          if (options.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            for (final opt in options)
-              if (opt is Map<String, dynamic>)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: _AskOptionButton(
-                    optionKey: ValueKey(
-                      'ask_option_${questionIndex}_${opt['label'] as String? ?? ''}',
-                    ),
-                    label: opt['label'] as String? ?? '',
-                    description: opt['description'] as String? ?? '',
-                    isSelected: isMulti
-                        ? (multiAnswers[questionIndex] ?? {}).contains(
-                            opt['label'] as String? ?? '',
-                          )
-                        : singleAnswers[questionIndex] ==
-                              (opt['label'] as String? ?? ''),
-                    isMulti: isMulti,
-                    onTap: () {
-                      final label = opt['label'] as String? ?? '';
-                      if (isMulti) {
-                        onToggleMultiSelectLabel(questionIndex, label);
-                      } else {
-                        onAnswerSingle(questionIndex, label);
-                      }
-                    },
-                  ),
-                ),
-          ],
-          if (alwaysShowTextInput) ...[
-            const SizedBox(height: 6),
-            _AskTextInputRow(
-              controller: getOrCreateController(questionIndex),
-              hintText: l.typeYourAnswer,
-              onChanged: (text) => onCustomTextChanged(questionIndex, text),
-              onSubmitted: () => onSubmitCustomText(questionIndex),
-              showSendButton: true,
-              submitLabel: l.send,
-            ),
-          ] else ...[
-            const SizedBox(height: 4),
-            _AskOtherAnswerSection(
-              questionIndex: questionIndex,
-              isCustomInputShown: customInputs.contains(questionIndex),
-              isMultiQuestion: isMultiQuestion,
-              controller: getOrCreateController(questionIndex),
-              onCustomTextChanged: onCustomTextChanged,
-              onSubmitCustomText: onSubmitCustomText,
-              onShowCustomInput: onShowCustomInput,
-            ),
-          ],
+        if (header != null && header.isNotEmpty) const SizedBox(height: 4),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        if (isMulti) ...[
+          const SizedBox(height: 2),
+          Text(
+            l.selectAllThatApply,
+            style: TextStyle(fontSize: 11, color: appColors.subtleText),
+          ),
         ],
-      ),
+        if (options.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final opt in options)
+            if (opt is Map<String, dynamic>)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: _AskOptionButton(
+                  optionKey: ValueKey(
+                    'ask_option_${questionIndex}_${opt['label'] as String? ?? ''}',
+                  ),
+                  label: opt['label'] as String? ?? '',
+                  description: opt['description'] as String? ?? '',
+                  isSelected: isMulti
+                      ? (multiAnswers[questionIndex] ?? {}).contains(
+                          opt['label'] as String? ?? '',
+                        )
+                      : singleAnswers[questionIndex] ==
+                            (opt['label'] as String? ?? ''),
+                  isMulti: isMulti,
+                  onTap: () {
+                    final label = opt['label'] as String? ?? '';
+                    if (isMulti) {
+                      onToggleMultiSelectLabel(questionIndex, label);
+                    } else {
+                      onAnswerSingle(questionIndex, label);
+                    }
+                  },
+                ),
+              ),
+        ],
+        if (alwaysShowTextInput) ...[
+          const SizedBox(height: 6),
+          _AskTextInputRow(
+            controller: getOrCreateController(questionIndex),
+            hintText: l.typeYourAnswer,
+            onChanged: (text) => onCustomTextChanged(questionIndex, text),
+            onSubmitted: () => onSubmitCustomText(questionIndex),
+            showSendButton: true,
+            submitLabel: l.send,
+          ),
+        ] else ...[
+          const SizedBox(height: 4),
+          _AskOtherAnswerSection(
+            questionIndex: questionIndex,
+            isCustomInputShown: customInputs.contains(questionIndex),
+            isMultiQuestion: isMultiQuestion,
+            controller: getOrCreateController(questionIndex),
+            onCustomTextChanged: onCustomTextChanged,
+            onSubmitCustomText: onSubmitCustomText,
+            onShowCustomInput: onShowCustomInput,
+          ),
+        ],
+      ],
     );
+
+    if (!scrollable) return content;
+
+    return SingleChildScrollView(child: content);
   }
 }
 
@@ -831,6 +837,7 @@ class _AskTextInputRow extends StatelessWidget {
 
 class _AskSummaryPage extends StatelessWidget {
   final List<dynamic> questions;
+  final bool scrollable;
   final Map<int, String> singleAnswers;
   final ValueChanged<int> onGoToPage;
   final VoidCallback onResetAll;
@@ -838,6 +845,7 @@ class _AskSummaryPage extends StatelessWidget {
 
   const _AskSummaryPage({
     required this.questions,
+    required this.scrollable,
     required this.singleAnswers,
     required this.onGoToPage,
     required this.onResetAll,
@@ -849,51 +857,53 @@ class _AskSummaryPage extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l.submitAllAnswers,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l.submitAllAnswers,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        for (var i = 0; i < questions.length; i++) ...[
+          _AskSummaryRow(
+            index: i,
+            question: questions[i] as Map<String, dynamic>,
+            answer: singleAnswers[i],
+            onEdit: () => onGoToPage(i),
           ),
-          const SizedBox(height: 8),
-          for (var i = 0; i < questions.length; i++) ...[
-            _AskSummaryRow(
-              index: i,
-              question: questions[i] as Map<String, dynamic>,
-              answer: singleAnswers[i],
-              onEdit: () => onGoToPage(i),
-            ),
-            if (i < questions.length - 1) const SizedBox(height: 6),
-          ],
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  key: const ValueKey('ask_reset_button'),
-                  onPressed: onResetAll,
-                  child: Text(l.cancel),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  key: const ValueKey('ask_submit_summary_button'),
-                  onPressed: onSubmitAll,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: cs.primary,
-                    foregroundColor: cs.onPrimary,
-                  ),
-                  child: Text(l.submitAllAnswers),
-                ),
-              ),
-            ],
-          ),
+          if (i < questions.length - 1) const SizedBox(height: 6),
         ],
-      ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                key: const ValueKey('ask_reset_button'),
+                onPressed: onResetAll,
+                child: Text(l.cancel),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton(
+                key: const ValueKey('ask_submit_summary_button'),
+                onPressed: onSubmitAll,
+                style: FilledButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
+                ),
+                child: Text(l.submitAllAnswers),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
+
+    if (!scrollable) return content;
+
+    return SingleChildScrollView(child: content);
   }
 }
 

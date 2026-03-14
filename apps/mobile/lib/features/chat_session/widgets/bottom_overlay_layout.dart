@@ -45,31 +45,55 @@ class _BottomOverlayLayoutState extends State<BottomOverlayLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+
     return LayoutBuilder(
       builder: (context, constraints) {
+        final visibleHeight = (constraints.maxHeight - keyboardInset).clamp(
+          0.0,
+          constraints.maxHeight,
+        );
+        final bottomObstruction = _overlayHeight + keyboardInset;
+
         return Stack(
           children: [
-            widget.contentBuilder(_overlayHeight),
+            widget.contentBuilder(bottomObstruction),
             if (widget.topOverlay != null) widget.topOverlay!,
             if (widget.floatingButtonBuilder != null)
-              widget.floatingButtonBuilder!(_overlayHeight),
+              widget.floatingButtonBuilder!(bottomObstruction),
             if (widget.overlay != null)
               Align(
                 alignment: Alignment.bottomCenter,
-                child: NotificationListener<SizeChangedLayoutNotification>(
-                  onNotification: (_) {
-                    WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => _syncOverlayHeight(),
-                    );
-                    return false;
-                  },
-                  child: SizeChangedLayoutNotifier(
-                    child: ConstrainedBox(
-                      key: _overlayKey,
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onVerticalDragStart: (_) => FocusScope.of(context).unfocus(),
+                  child: NotificationListener<SizeChangedLayoutNotification>(
+                    onNotification: (_) {
+                      WidgetsBinding.instance.addPostFrameCallback(
+                        (_) => _syncOverlayHeight(),
+                      );
+                      return false;
+                    },
+                    child: SizeChangedLayoutNotifier(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: keyboardInset),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: visibleHeight,
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: ClipRect(
+                              child: ConstrainedBox(
+                                key: _overlayKey,
+                                constraints: BoxConstraints(
+                                  maxHeight: visibleHeight,
+                                ),
+                                child: widget.overlay,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      child: SingleChildScrollView(child: widget.overlay),
                     ),
                   ),
                 ),

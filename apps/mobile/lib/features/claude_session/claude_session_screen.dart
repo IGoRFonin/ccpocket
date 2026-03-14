@@ -672,6 +672,7 @@ class _ChatScreenBody extends HookWidget {
                                   toolUseId: askToolUseId,
                                   input: askInput,
                                   onAnswer: answerQuestion,
+                                  scrollable: false,
                                 ),
                               if (pendingToolUseId != null)
                                 ApprovalBar(
