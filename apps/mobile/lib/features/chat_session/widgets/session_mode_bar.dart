@@ -399,9 +399,7 @@ void showSandboxModeMenu(BuildContext context, ChatSessionCubit chatCubit) {
               ),
             ),
             for (final mode
-                in isClaude
-                    ? SandboxMode.values.reversed
-                    : SandboxMode.values)
+                in isClaude ? SandboxMode.values.reversed : SandboxMode.values)
               ListTile(
                 leading: Icon(
                   _sandboxMenuIcon(mode, isClaude),

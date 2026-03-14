@@ -23,6 +23,9 @@ abstract class DiffViewState with _$DiffViewState {
     /// Error message from parsing or server request.
     String? error,
 
+    /// Error code for categorized error handling (e.g. 'git_not_available').
+    String? errorCode,
+
     /// Whether selection mode is active.
     @Default(false) bool selectionMode,
 

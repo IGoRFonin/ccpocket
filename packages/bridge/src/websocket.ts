@@ -326,6 +326,17 @@ export class BridgeWebSocketServer {
               } : {}),
             });
             this.broadcastSessionList();
+            // Send a gentle tip when the project is not a git repository
+            if (createdSession && !createdSession.gitBranch) {
+              const tipMsg = {
+                type: "system",
+                subtype: "tip",
+                tipCode: "git_not_available",
+                sessionId,
+              } as ServerMessage;
+              createdSession.history.push(tipMsg);
+              this.send(ws, tipMsg);
+            }
           });
           this.debugEvents.set(sessionId, []);
           this.recordDebugEvent(sessionId, {
@@ -1403,7 +1414,12 @@ export class BridgeWebSocketServer {
         }
         execFile("git", ["ls-files"], { cwd: msg.projectPath, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
           if (err) {
-            this.send(ws, { type: "error", message: `Failed to list files: ${err.message}` });
+            if (/not a git repository/i.test(err.message)) {
+              // Non-git project: silently return empty list (file listing is auxiliary)
+              this.send(ws, { type: "file_list", files: [] });
+            } else {
+              this.send(ws, { type: "error", message: `Failed to list files: ${err.message}` });
+            }
             return;
           }
           const files = stdout.trim().split("\n").filter(Boolean);
@@ -1481,7 +1497,16 @@ export class BridgeWebSocketServer {
         }
         this.collectGitDiff(msg.projectPath, ({ diff, error }) => {
           if (error) {
-            this.send(ws, { type: "diff_result", diff: "", error: `Failed to get diff: ${error}` });
+            if (/not a git repository/i.test(error)) {
+              this.send(ws, {
+                type: "diff_result",
+                diff: "",
+                error: "This project is not a git repository",
+                errorCode: "git_not_available",
+              });
+            } else {
+              this.send(ws, { type: "diff_result", diff: "", error: `Failed to get diff: ${error}` });
+            }
             return;
           }
           void this.collectImageChanges(msg.projectPath, diff).then((imageChanges) => {

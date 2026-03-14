@@ -59,7 +59,13 @@ class DiffViewCubit extends Cubit<DiffViewState> {
         initialSelectedHunkKeys != null && initialSelectedHunkKeys.isNotEmpty;
     _diffSub = _bridge.diffResults.listen((result) {
       if (result.error != null) {
-        emit(state.copyWith(loading: false, error: result.error));
+        emit(
+          state.copyWith(
+            loading: false,
+            error: result.error,
+            errorCode: result.errorCode,
+          ),
+        );
       } else if (result.diff.trim().isEmpty) {
         emit(state.copyWith(loading: false, files: []));
       } else {

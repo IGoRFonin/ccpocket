@@ -179,6 +179,7 @@ export type ServerMessage =
       sandboxMode?: string;
       clearContext?: boolean;
       sourceSessionId?: string;
+      tipCode?: string;
     }
   | { type: "assistant"; message: AssistantMessage; messageUuid?: string }
   | { type: "tool_result"; toolUseId: string; content: string; toolName?: string; images?: ImageRef[]; userMessageUuid?: string; rawContentBlocks?: unknown[] }
@@ -205,7 +206,7 @@ export type ServerMessage =
   | { type: "thinking_delta"; text: string }
   | { type: "file_list"; files: string[] }
   | { type: "project_history"; projects: string[] }
-  | { type: "diff_result"; diff: string; error?: string; imageChanges?: ImageChange[] }
+  | { type: "diff_result"; diff: string; error?: string; errorCode?: string; imageChanges?: ImageChange[] }
   | { type: "diff_image_result"; filePath: string; version: "old" | "new" | "both"; base64?: string; mimeType?: string; error?: string; oldBase64?: string; newBase64?: string }
   | { type: "worktree_list"; worktrees: WorktreeInfo[]; mainBranch?: string }
   | { type: "worktree_removed"; worktreePath: string }

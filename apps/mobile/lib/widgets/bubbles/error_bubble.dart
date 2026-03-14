@@ -15,6 +15,7 @@ String? _errorTitle(String? errorCode) {
     'auth_api_error' => 'Authentication Error',
     'codex_auth_required' => 'Codex Authentication Error',
     'path_not_allowed' => 'Path Not Allowed',
+    'git_not_available' => 'Git Not Available',
     _ => null,
   };
 }
@@ -27,6 +28,8 @@ String? _errorHint(String? errorCode) {
     'auth_api_error' => 'Run "claude auth login" on the Bridge machine',
     'codex_auth_required' => 'Check OPENAI_API_KEY on the Bridge machine',
     'path_not_allowed' => 'Update BRIDGE_ALLOWED_DIRS on the Bridge server',
+    'git_not_available' =>
+      'Git features (diff, file list) are not available for this project',
     _ => null,
   };
 }
@@ -47,6 +50,11 @@ bool _isClaudeAuthError(String? errorCode) {
       errorCode == 'auth_api_error';
 }
 
+/// Whether the errorCode represents a non-critical warning (amber style).
+bool _isWarning(String? errorCode) {
+  return errorCode == 'git_not_available';
+}
+
 class ErrorBubble extends StatelessWidget {
   final ErrorMessage message;
   const ErrorBubble({super.key, required this.message});
@@ -57,6 +65,15 @@ class ErrorBubble extends StatelessWidget {
     final title = _errorTitle(message.errorCode);
     final hint = _errorHint(message.errorCode);
     final hasStructured = title != null;
+    final isWarn = _isWarning(message.errorCode);
+
+    final bubbleColor = isWarn
+        ? appColors.warningBubble
+        : appColors.errorBubble;
+    final borderColor = isWarn
+        ? appColors.warningBubbleBorder
+        : appColors.errorBubbleBorder;
+    final textColor = isWarn ? appColors.warningText : appColors.errorText;
 
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -65,26 +82,26 @@ class ErrorBubble extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
-        color: appColors.errorBubble,
+        color: bubbleColor,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: appColors.errorBubbleBorder),
+        border: Border.all(color: borderColor),
       ),
       child: hasStructured
-          ? _buildStructured(context, appColors, title, hint)
-          : _buildSimple(appColors),
+          ? _buildStructured(context, appColors, title, hint, textColor, isWarn)
+          : _buildSimple(textColor),
     );
   }
 
   /// Original simple layout for errors without errorCode (backward compat).
-  Widget _buildSimple(AppColors appColors) {
+  Widget _buildSimple(Color textColor) {
     return Row(
       children: [
-        _errorIcon(appColors),
+        _icon(textColor, false),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             message.message,
-            style: TextStyle(color: appColors.errorText, fontSize: 13),
+            style: TextStyle(color: textColor, fontSize: 13),
           ),
         ),
       ],
@@ -97,6 +114,8 @@ class ErrorBubble extends StatelessWidget {
     AppColors appColors,
     String title,
     String? hint,
+    Color textColor,
+    bool isWarn,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,13 +123,13 @@ class ErrorBubble extends StatelessWidget {
         // Header row with icon and title
         Row(
           children: [
-            _errorIcon(appColors),
+            _icon(textColor, isWarn),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 title,
                 style: TextStyle(
-                  color: appColors.errorText,
+                  color: textColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -123,14 +142,14 @@ class ErrorBubble extends StatelessWidget {
         Text(
           message.message,
           style: TextStyle(
-            color: appColors.errorText.withValues(alpha: 0.85),
+            color: textColor.withValues(alpha: 0.85),
             fontSize: 12,
           ),
         ),
         // Remedy hint
         if (hint != null) ...[
           const SizedBox(height: 8),
-          _buildHint(context, appColors, hint),
+          _buildHint(context, textColor, hint),
         ],
         if (_isClaudeAuthError(message.errorCode)) ...[
           const SizedBox(height: 8),
@@ -149,12 +168,12 @@ class ErrorBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildHint(BuildContext context, AppColors appColors, String hint) {
+  Widget _buildHint(BuildContext context, Color textColor, String hint) {
     final command = _copyableCommand(message.errorCode);
     final child = Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       decoration: BoxDecoration(
-        color: appColors.errorText.withValues(alpha: 0.08),
+        color: textColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -162,24 +181,20 @@ class ErrorBubble extends StatelessWidget {
           Icon(
             Icons.lightbulb_outline,
             size: 14,
-            color: appColors.errorText.withValues(alpha: 0.7),
+            color: textColor.withValues(alpha: 0.7),
           ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               hint,
               style: TextStyle(
-                color: appColors.errorText.withValues(alpha: 0.7),
+                color: textColor.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
           ),
           if (command != null)
-            Icon(
-              Icons.copy,
-              size: 12,
-              color: appColors.errorText.withValues(alpha: 0.5),
-            ),
+            Icon(Icons.copy, size: 12, color: textColor.withValues(alpha: 0.5)),
         ],
       ),
     );
@@ -201,14 +216,18 @@ class ErrorBubble extends StatelessWidget {
     return child;
   }
 
-  Widget _errorIcon(AppColors appColors) {
+  Widget _icon(Color textColor, bool isWarn) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: appColors.errorText.withValues(alpha: 0.12),
+        color: textColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Icon(Icons.error_outline, size: 14, color: appColors.errorText),
+      child: Icon(
+        isWarn ? Icons.info_outline : Icons.error_outline,
+        size: 14,
+        color: textColor,
+      ),
     );
   }
 }

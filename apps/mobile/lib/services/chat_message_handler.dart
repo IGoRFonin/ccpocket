@@ -90,6 +90,10 @@ class ChatMessageHandler {
   String currentThinkingText = '';
   StreamingChatEntry? currentStreaming;
 
+  /// Whether a git_not_available tip has been shown in this session.
+  /// Used to suppress duplicate git errors in the chat stream.
+  bool _gitTipShown = false;
+
   ChatStateUpdate handle(
     ServerMessage msg, {
     required bool isBackground,
@@ -197,7 +201,11 @@ class ChatMessageHandler {
           );
         }
         return const ChatStateUpdate();
-      case ErrorMessage(:final message):
+      case ErrorMessage(:final message, :final errorCode):
+        // Suppress duplicate git errors when the tip was already shown
+        if (errorCode == 'git_not_available' && _gitTipShown) {
+          return const ChatStateUpdate();
+        }
         logger.error('[handler] error message: $message');
         return ChatStateUpdate(entriesToAdd: [ServerChatEntry(msg)]);
       default:
@@ -509,9 +517,15 @@ class ChatMessageHandler {
     final sessionId = msg is SystemMessage
         ? (msg.claudeSessionId ?? msg.sessionId)
         : null;
-    // Only add init as a visible chat entry; session_created and
+    // Track git tip to suppress duplicate git errors later
+    if (subtype == 'tip' &&
+        msg is SystemMessage &&
+        msg.tipCode == 'git_not_available') {
+      _gitTipShown = true;
+    }
+    // Add init and tip as visible chat entries; session_created and
     // supported_commands are internal metadata messages.
-    final addEntry = subtype == 'init';
+    final addEntry = subtype == 'init' || subtype == 'tip';
     return ChatStateUpdate(
       entriesToAdd: addEntry ? [ServerChatEntry(msg)] : [],
       permissionMode: permissionMode,

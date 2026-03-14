@@ -362,6 +362,11 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color errorBubbleBorder;
   final Color errorText;
 
+  // Warning (info-level, non-critical alerts)
+  final Color warningBubble;
+  final Color warningBubbleBorder;
+  final Color warningText;
+
   // Permission
   final Color permissionBubble;
   final Color permissionBubbleBorder;
@@ -419,6 +424,9 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.errorBubble,
     required this.errorBubbleBorder,
     required this.errorText,
+    required this.warningBubble,
+    required this.warningBubbleBorder,
+    required this.warningText,
     required this.permissionBubble,
     required this.permissionBubbleBorder,
     required this.permissionIcon,
@@ -461,6 +469,9 @@ class AppColors extends ThemeExtension<AppColors> {
     errorBubble: Color(0xFFFEF2F2), // Red 50
     errorBubbleBorder: Color(0xFFEF4444), // Red 500
     errorText: Color(0xFFB91C1C), // Red 700
+    warningBubble: Color(0xFFFFFBEB), // Amber 50
+    warningBubbleBorder: Color(0xFFFBBF24), // Amber 400
+    warningText: Color(0xFF92400E), // Amber 800
     permissionBubble: Color(0xFFFFF7ED), // Orange 50
     permissionBubbleBorder: Color(0xFFD97706), // Amber 600
     permissionIcon: Color(0xFFD4450A), // Ember (match primary)
@@ -503,6 +514,9 @@ class AppColors extends ThemeExtension<AppColors> {
     errorBubble: Color(0xFF2A1215),
     errorBubbleBorder: Color(0xFF5C2020),
     errorText: Color(0xFFFCA5A5), // Red 300
+    warningBubble: Color(0xFF2A2008),
+    warningBubbleBorder: Color(0xFF78350F),
+    warningText: Color(0xFFFCD34D), // Amber 300
     permissionBubble: Color(0xFF241A0B), // deep warm
     permissionBubbleBorder: Color(0xFF5C3D15),
     permissionIcon: Color(0xFFFDBA74), // Orange 300
@@ -545,6 +559,9 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? errorBubble,
     Color? errorBubbleBorder,
     Color? errorText,
+    Color? warningBubble,
+    Color? warningBubbleBorder,
+    Color? warningText,
     Color? permissionBubble,
     Color? permissionBubbleBorder,
     Color? permissionIcon,
@@ -585,6 +602,9 @@ class AppColors extends ThemeExtension<AppColors> {
       errorBubble: errorBubble ?? this.errorBubble,
       errorBubbleBorder: errorBubbleBorder ?? this.errorBubbleBorder,
       errorText: errorText ?? this.errorText,
+      warningBubble: warningBubble ?? this.warningBubble,
+      warningBubbleBorder: warningBubbleBorder ?? this.warningBubbleBorder,
+      warningText: warningText ?? this.warningText,
       permissionBubble: permissionBubble ?? this.permissionBubble,
       permissionBubbleBorder:
           permissionBubbleBorder ?? this.permissionBubbleBorder,
@@ -642,6 +662,13 @@ class AppColors extends ThemeExtension<AppColors> {
         t,
       )!,
       errorText: Color.lerp(errorText, other.errorText, t)!,
+      warningBubble: Color.lerp(warningBubble, other.warningBubble, t)!,
+      warningBubbleBorder: Color.lerp(
+        warningBubbleBorder,
+        other.warningBubbleBorder,
+        t,
+      )!,
+      warningText: Color.lerp(warningText, other.warningText, t)!,
       permissionBubble: Color.lerp(
         permissionBubble,
         other.permissionBubble,

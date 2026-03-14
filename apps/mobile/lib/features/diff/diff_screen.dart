@@ -129,7 +129,7 @@ class _DiffScreenBody extends StatelessWidget {
       body: state.loading
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
-          ? DiffErrorState(error: state.error!)
+          ? DiffErrorState(error: state.error!, errorCode: state.errorCode)
           : state.files.isEmpty
           ? const DiffEmptyState()
           : DiffContentList(

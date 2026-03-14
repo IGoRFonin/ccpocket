@@ -11,6 +11,7 @@ import 'bubbles/result_chip.dart';
 import 'bubbles/status_chip.dart';
 import 'bubbles/streaming_bubble.dart';
 import 'bubbles/system_chip.dart';
+import 'bubbles/tip_chip.dart';
 import 'bubbles/tool_result_bubble.dart';
 import 'bubbles/tool_use_summary_bubble.dart';
 import 'bubbles/user_bubble.dart';
@@ -165,7 +166,8 @@ class ServerMessageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (message) {
-      final SystemMessage msg => SystemChip(message: msg),
+      final SystemMessage msg =>
+        msg.subtype == 'tip' ? TipChip(message: msg) : SystemChip(message: msg),
       final AssistantServerMessage msg => AssistantBubble(
         message: msg,
         editedPlanText: editedPlanText,

@@ -345,6 +345,7 @@ sealed class ServerMessage {
         worktreeBranch: json['worktreeBranch'] as String?,
         clearContext: json['clearContext'] as bool? ?? false,
         sourceSessionId: json['sourceSessionId'] as String?,
+        tipCode: json['tipCode'] as String?,
       ),
       'assistant' => AssistantServerMessage(
         message: AssistantMessage.fromJson(
@@ -478,6 +479,7 @@ sealed class ServerMessage {
       'diff_result' => DiffResultMessage(
         diff: json['diff'] as String? ?? '',
         error: json['error'] as String?,
+        errorCode: json['errorCode'] as String?,
         imageChanges:
             (json['imageChanges'] as List?)
                 ?.map(
@@ -667,6 +669,7 @@ class SystemMessage implements ServerMessage {
   final String? worktreeBranch;
   final bool clearContext;
   final String? sourceSessionId;
+  final String? tipCode;
   const SystemMessage({
     required this.subtype,
     this.sessionId,
@@ -683,6 +686,7 @@ class SystemMessage implements ServerMessage {
     this.worktreeBranch,
     this.clearContext = false,
     this.sourceSessionId,
+    this.tipCode,
   });
 }
 
@@ -1065,10 +1069,12 @@ class DiffImageChange {
 class DiffResultMessage implements ServerMessage {
   final String diff;
   final String? error;
+  final String? errorCode;
   final List<DiffImageChange> imageChanges;
   const DiffResultMessage({
     required this.diff,
     this.error,
+    this.errorCode,
     this.imageChanges = const [],
   });
 }

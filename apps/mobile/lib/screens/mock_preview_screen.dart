@@ -105,9 +105,7 @@ class _ScenariosTab extends StatelessWidget {
     if (scenario == storeDiffLineNumberScenario) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const _StoreLineNumberDiffWrapper(),
-        ),
+        MaterialPageRoute(builder: (_) => const _StoreLineNumberDiffWrapper()),
       );
       return;
     }

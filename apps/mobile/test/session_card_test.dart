@@ -108,9 +108,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       // Git branch text
@@ -131,9 +129,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       // No fork icon when gitBranch is empty
@@ -150,9 +146,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       // Status label in bar
@@ -176,9 +170,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       // Plan text badge was removed; plan mode is now indicated by
@@ -202,9 +194,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       expect(
@@ -228,9 +218,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       expect(find.text('claude-sonnet-4-20250514  plan'), findsOneWidget);
@@ -250,9 +238,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       expect(find.text('bypass-all'), findsOneWidget);
@@ -270,9 +256,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       expect(find.text('plan'), findsOneWidget);
@@ -289,9 +273,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       // Git branch should show
@@ -317,9 +299,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       expect(find.text('Needs You'), findsOneWidget);
@@ -416,9 +396,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(
-          RunningSessionCard(session: session, onTap: () {}),
-        ),
+        _wrap(RunningSessionCard(session: session, onTap: () {})),
       );
 
       final otherAnswerButton = tester.widget<TextButton>(

@@ -187,9 +187,7 @@ class FullScreenImageViewer extends StatelessWidget {
                     switch (state.extendedImageLoadState) {
                       case LoadState.loading:
                         return const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white),
                         );
                       case LoadState.completed:
                         return state.completedWidget;

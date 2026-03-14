@@ -1025,8 +1025,9 @@ class _SessionListScreenState extends State<SessionListScreen>
                         onRefresh: () async => _refresh(),
                         child: HomeContent(
                           connectionState: connectionState,
-                          bridgeVersion:
-                              context.read<BridgeService>().bridgeVersion,
+                          bridgeVersion: context
+                              .read<BridgeService>()
+                              .bridgeVersion,
                           sessions: sessions,
                           recentSessions: recentSessionsList,
                           accumulatedProjectPaths:
