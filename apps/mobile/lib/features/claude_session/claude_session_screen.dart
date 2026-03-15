@@ -752,7 +752,7 @@ class _ChatScreenBody extends HookWidget {
                       pendingPlanToolUseId: pendingPlanToolUseId,
                       onScrollToBottom: scroll.scrollToBottom,
                       scrollToUserEntry: scrollToUserEntry,
-                      bottomPadding: overlayHeight > 0 ? overlayHeight + 8 : 8,
+                      bottomPadding: 8,
                     ),
                   ),
                 ),

@@ -752,7 +752,7 @@ class _CodexChatBody extends HookWidget {
                       scrollToUserEntry: scrollToUserEntry,
                       collapseToolResults: collapseToolResults,
                       onScrollToBottom: scroll.scrollToBottom,
-                      bottomPadding: overlayHeight > 0 ? overlayHeight + 8 : 8,
+                      bottomPadding: 8,
                     ),
                   ),
                 ),

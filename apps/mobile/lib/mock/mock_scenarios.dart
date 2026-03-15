@@ -414,8 +414,106 @@ final _askUserQuestion = MockScenario(
       delay: const Duration(milliseconds: 300),
       message: const StatusMessage(status: ProcessStatus.running),
     ),
+    // --- Dummy conversation to make chat area scrollable ---
     MockStep(
-      delay: const Duration(milliseconds: 800),
+      delay: const Duration(milliseconds: 500),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-ask-pre-1',
+          role: 'assistant',
+          content: [
+            const TextContent(
+              text:
+                  'I\'ll start by analyzing the current error handling implementation '
+                  'in your codebase. Let me look at the relevant files.',
+            ),
+            const ToolUseContent(
+              id: 'tool-ask-pre-read-1',
+              name: 'Read',
+              input: {'file_path': 'lib/services/api_client.dart'},
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 700),
+      message: const ToolResultMessage(
+        toolUseId: 'tool-ask-pre-read-1',
+        toolName: 'Read',
+        content:
+            'class ApiClient {\n'
+            '  final HttpClient _client;\n'
+            '  Future<Response> get(String path) async {\n'
+            '    try {\n'
+            '      return await _client.get(path);\n'
+            '    } catch (e) {\n'
+            '      throw ApiException(e.toString());\n'
+            '    }\n'
+            '  }\n'
+            '}',
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 900),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-ask-pre-2',
+          role: 'assistant',
+          content: [
+            const TextContent(
+              text:
+                  'I can see the current implementation simply catches errors and rethrows them. '
+                  'Let me also check how errors are handled upstream.',
+            ),
+            const ToolUseContent(
+              id: 'tool-ask-pre-grep-1',
+              name: 'Grep',
+              input: {
+                'pattern': 'ApiException',
+                'path': 'lib/',
+                'glob': '**/*.dart',
+              },
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 1100),
+      message: const ToolResultMessage(
+        toolUseId: 'tool-ask-pre-grep-1',
+        toolName: 'Grep',
+        content:
+            'lib/services/api_client.dart:8:      throw ApiException(e.toString());\n'
+            'lib/providers/data_provider.dart:23:    } on ApiException catch (e) {\n'
+            'lib/providers/data_provider.dart:24:      state = AsyncError(e, StackTrace.current);\n'
+            'lib/screens/home_screen.dart:45:  // TODO: handle ApiException',
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 1300),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-ask-pre-3',
+          role: 'assistant',
+          content: [
+            const TextContent(
+              text:
+                  'I found 3 places where `ApiException` is referenced. The error handling '
+                  'is inconsistent — `data_provider.dart` catches it but `home_screen.dart` has '
+                  'a TODO comment. There are several approaches we could take to improve this.',
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    // --- End dummy conversation ---
+    MockStep(
+      delay: const Duration(milliseconds: 1500),
       message: AssistantServerMessage(
         message: AssistantMessage(
           id: 'mock-ask-1',
@@ -477,8 +575,105 @@ final _askUserSingleMultiSelect = MockScenario(
       delay: const Duration(milliseconds: 300),
       message: const StatusMessage(status: ProcessStatus.running),
     ),
+    // --- Dummy conversation to make chat area scrollable ---
     MockStep(
-      delay: const Duration(milliseconds: 800),
+      delay: const Duration(milliseconds: 500),
+      message: const UserInputMessage(
+        text: 'VNCビューアの改善点を洗い出して、優先度をつけて',
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 700),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-ms-pre-1',
+          role: 'assistant',
+          content: [
+            const TextContent(
+              text:
+                  'VNCビューアの現在の実装を確認します。まず関連ファイルを見てみましょう。',
+            ),
+            const ToolUseContent(
+              id: 'tool-ms-pre-glob-1',
+              name: 'Glob',
+              input: {'pattern': 'lib/**/vnc*.dart'},
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 900),
+      message: const ToolResultMessage(
+        toolUseId: 'tool-ms-pre-glob-1',
+        toolName: 'Glob',
+        content:
+            'lib/features/vnc/vnc_viewer_screen.dart\n'
+            'lib/features/vnc/vnc_connection.dart\n'
+            'lib/features/vnc/vnc_input_handler.dart',
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 1100),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-ms-pre-2',
+          role: 'assistant',
+          content: [
+            const TextContent(
+              text: 'VNCビューアの実装を読みます。',
+            ),
+            const ToolUseContent(
+              id: 'tool-ms-pre-read-1',
+              name: 'Read',
+              input: {'file_path': 'lib/features/vnc/vnc_viewer_screen.dart'},
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 1300),
+      message: const ToolResultMessage(
+        toolUseId: 'tool-ms-pre-read-1',
+        toolName: 'Read',
+        content:
+            'class VncViewerScreen extends StatefulWidget {\n'
+            '  // ... 250 lines of VNC viewer implementation\n'
+            '  // Current issues:\n'
+            '  // - No auto-reconnect on disconnect\n'
+            '  // - Keyboard input limited to basic keys\n'
+            '  // - Single simulator only\n'
+            '  // - No error recovery for codec failures\n'
+            '}',
+      ),
+    ),
+    MockStep(
+      delay: const Duration(milliseconds: 1500),
+      message: AssistantServerMessage(
+        message: AssistantMessage(
+          id: 'mock-ms-pre-3',
+          role: 'assistant',
+          content: [
+            const TextContent(
+              text:
+                  'コードを分析した結果、以下の改善点を特定しました：\n\n'
+                  '1. **Auto-reconnect** — 切断時の自動再接続がない\n'
+                  '2. **Keyboard enhancement** — 修飾キー（Cmd, Ctrl等）未対応\n'
+                  '3. **Error handling** — H.264デコード失敗時のフォールバックなし\n'
+                  '4. **Multi-simulator** — 同時接続は1台のみ\n\n'
+                  'どれを実装するか選んでください。',
+            ),
+          ],
+          model: 'claude-sonnet-4-20250514',
+        ),
+      ),
+    ),
+    // --- End dummy conversation ---
+    MockStep(
+      delay: const Duration(milliseconds: 1700),
       message: AssistantServerMessage(
         message: AssistantMessage(
           id: 'mock-ask-single-multi-1',

@@ -57,7 +57,12 @@ class _BottomOverlayLayoutState extends State<BottomOverlayLayout> {
 
         return Stack(
           children: [
-            widget.contentBuilder(bottomObstruction),
+            // Clip chat content above the overlay so messages don't
+            // scroll behind it.
+            Padding(
+              padding: EdgeInsets.only(bottom: bottomObstruction),
+              child: widget.contentBuilder(bottomObstruction),
+            ),
             if (widget.topOverlay != null) widget.topOverlay!,
             if (widget.floatingButtonBuilder != null)
               widget.floatingButtonBuilder!(bottomObstruction),
