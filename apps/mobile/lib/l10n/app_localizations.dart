@@ -2251,6 +2251,84 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'ヘルプ'**
   String get authHelpButton;
+
+  /// No description provided for @terminalApp.
+  ///
+  /// In ja, this message translates to:
+  /// **'ターミナルアプリ'**
+  String get terminalApp;
+
+  /// No description provided for @terminalAppSubtitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'外部ターミナルアプリでプロジェクトを開く'**
+  String get terminalAppSubtitle;
+
+  /// No description provided for @terminalAppNone.
+  ///
+  /// In ja, this message translates to:
+  /// **'未設定'**
+  String get terminalAppNone;
+
+  /// No description provided for @terminalAppCustom.
+  ///
+  /// In ja, this message translates to:
+  /// **'カスタム'**
+  String get terminalAppCustom;
+
+  /// No description provided for @terminalAppName.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリ名'**
+  String get terminalAppName;
+
+  /// No description provided for @terminalUrlTemplate.
+  ///
+  /// In ja, this message translates to:
+  /// **'URL テンプレート'**
+  String get terminalUrlTemplate;
+
+  /// No description provided for @terminalUrlTemplateHint.
+  ///
+  /// In ja, this message translates to:
+  /// **'変数: host, user, port, project_path'**
+  String get terminalUrlTemplateHint;
+
+  /// No description provided for @terminalSshUser.
+  ///
+  /// In ja, this message translates to:
+  /// **'SSH ユーザー'**
+  String get terminalSshUser;
+
+  /// No description provided for @terminalSshUserHint.
+  ///
+  /// In ja, this message translates to:
+  /// **'未入力時はマシンの SSH ユーザーを使用'**
+  String get terminalSshUserHint;
+
+  /// No description provided for @openInTerminal.
+  ///
+  /// In ja, this message translates to:
+  /// **'ターミナルで開く'**
+  String get openInTerminal;
+
+  /// No description provided for @terminalAppNotInstalled.
+  ///
+  /// In ja, this message translates to:
+  /// **'ターミナルアプリを開けませんでした'**
+  String get terminalAppNotInstalled;
+
+  /// No description provided for @terminalAppExperimental.
+  ///
+  /// In ja, this message translates to:
+  /// **'実験的機能'**
+  String get terminalAppExperimental;
+
+  /// No description provided for @terminalAppExperimentalNote.
+  ///
+  /// In ja, this message translates to:
+  /// **'この機能は実験的です。プリセットはアプリや環境によって動作しない場合があります。新しいプリセットの追加は GitHub で歓迎しています！'**
+  String get terminalAppExperimentalNote;
 }
 
 class _AppLocalizationsDelegate

@@ -460,5 +460,19 @@
 
   "authHelpTitle": "Auth Troubleshooting",
   "authHelpFetchError": "Failed to load help guide",
-  "authHelpButton": "Help"
+  "authHelpButton": "Help",
+
+  "terminalApp": "Terminal App",
+  "terminalAppSubtitle": "Open projects in an external terminal app",
+  "terminalAppNone": "Not configured",
+  "terminalAppCustom": "Custom",
+  "terminalAppName": "App Name",
+  "terminalUrlTemplate": "URL Template",
+  "terminalUrlTemplateHint": "Variables: host, user, port, project_path",
+  "terminalSshUser": "SSH User",
+  "terminalSshUserHint": "Defaults to machine SSH user",
+  "openInTerminal": "Open in Terminal",
+  "terminalAppNotInstalled": "Could not open terminal app",
+  "terminalAppExperimental": "Experimental",
+  "terminalAppExperimentalNote": "This feature is experimental. Presets may not work with all apps or configurations. Contributions for new presets are welcome on GitHub!"
 }

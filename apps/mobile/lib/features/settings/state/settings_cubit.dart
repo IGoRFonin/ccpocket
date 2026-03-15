@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/messages.dart';
+import '../../../models/terminal_app.dart';
 import '../../../services/bridge_service.dart';
 import '../../../services/fcm_service.dart';
 import '../../../services/machine_manager_service.dart';
@@ -33,6 +34,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   /// Also read directly from SharedPreferences in main.dart at startup.
   static const keyShorebirdTrack = 'settings_shorebird_track';
   static const _keyHideVoiceInput = 'settings_hide_voice_input';
+  static const _keyTerminalApp = 'settings_terminal_app';
   // Legacy key for migration
   static const _keyIndentSize = 'settings_indent_size';
   // Legacy key for migration
@@ -136,6 +138,18 @@ class SettingsCubit extends Cubit<SettingsState> {
     final indentSize = prefs.getInt(_keyIndentSize) ?? 2;
     final hideVoiceInput = prefs.getBool(_keyHideVoiceInput) ?? false;
 
+    // Load terminal app config
+    var terminalApp = TerminalAppConfig.empty;
+    final terminalJson = prefs.getString(_keyTerminalApp);
+    if (terminalJson != null) {
+      try {
+        final map = jsonDecode(terminalJson) as Map<String, dynamic>;
+        terminalApp = TerminalAppConfig.fromJson(map);
+      } catch (_) {
+        // Ignore parse errors
+      }
+    }
+
     return SettingsState(
       themeMode:
           (themeModeIndex != null &&
@@ -150,6 +164,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       shorebirdTrack: shorebirdTrack,
       indentSize: indentSize.clamp(1, 4),
       hideVoiceInput: hideVoiceInput,
+      terminalApp: terminalApp,
     );
   }
 
@@ -223,6 +238,16 @@ class SettingsCubit extends Cubit<SettingsState> {
   void setSpeechLocaleId(String localeId) {
     _prefs.setString(_keySpeechLocale, localeId);
     emit(state.copyWith(speechLocaleId: localeId));
+  }
+
+  void setTerminalApp(TerminalAppConfig config) {
+    _prefs.setString(_keyTerminalApp, jsonEncode(config.toJson()));
+    emit(state.copyWith(terminalApp: config));
+  }
+
+  void clearTerminalApp() {
+    _prefs.remove(_keyTerminalApp);
+    emit(state.copyWith(terminalApp: TerminalAppConfig.empty));
   }
 
   Future<void> toggleFcm(bool enabled) async {

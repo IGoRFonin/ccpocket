@@ -7,8 +7,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 import '../../hooks/use_scroll_tracking.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
 import '../../providers/bridge_cubits.dart';
+import '../../providers/machine_manager_cubit.dart';
 import '../../services/bridge_service.dart';
 import '../../widgets/rename_session_dialog.dart';
 import '../../services/chat_message_handler.dart';
@@ -17,6 +19,8 @@ import '../../services/notification_service.dart';
 import '../../widgets/session_name_title.dart';
 import '../../utils/diff_parser.dart';
 import '../../utils/request_user_input.dart';
+import '../../utils/terminal_launcher.dart';
+import '../settings/state/settings_cubit.dart';
 import '../../widgets/new_session_sheet.dart'
     show permissionModeFromRaw, sandboxModeFromRaw;
 import '../../widgets/approval_bar.dart';
@@ -577,51 +581,71 @@ class _CodexChatBody extends HookWidget {
                         context.router.push(GalleryRoute(sessionId: sessionId));
                       case 'rename':
                         _renameSession(context, sessionId);
+                      case 'terminal':
+                        _openInTerminal(context, projectPath);
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      key: ValueKey('menu_rename'),
-                      value: 'rename',
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined, size: 20),
-                        title: Text('Rename'),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      key: ValueKey('menu_message_history'),
-                      value: 'history',
-                      child: ListTile(
-                        leading: Icon(Icons.chat_outlined, size: 20),
-                        title: Text('Message History'),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    if (projectPath != null)
+                  itemBuilder: (context) {
+                    final terminalConfig = context
+                        .read<SettingsCubit>()
+                        .state
+                        .terminalApp;
+                    final l = AppLocalizations.of(context);
+                    return [
                       const PopupMenuItem(
-                        key: ValueKey('menu_screenshot'),
-                        value: 'screenshot',
+                        key: ValueKey('menu_rename'),
+                        value: 'rename',
                         child: ListTile(
-                          leading: Icon(Icons.screenshot_monitor, size: 20),
-                          title: Text('Screenshot'),
+                          leading: Icon(Icons.edit_outlined, size: 20),
+                          title: Text('Rename'),
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                    const PopupMenuItem(
-                      key: ValueKey('menu_gallery'),
-                      value: 'gallery',
-                      child: ListTile(
-                        leading: Icon(Icons.collections, size: 20),
-                        title: Text('Gallery'),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
+                      const PopupMenuItem(
+                        key: ValueKey('menu_message_history'),
+                        value: 'history',
+                        child: ListTile(
+                          leading: Icon(Icons.chat_outlined, size: 20),
+                          title: Text('Message History'),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
                       ),
-                    ),
-                  ],
+                      if (projectPath != null)
+                        const PopupMenuItem(
+                          key: ValueKey('menu_screenshot'),
+                          value: 'screenshot',
+                          child: ListTile(
+                            leading: Icon(Icons.screenshot_monitor, size: 20),
+                            title: Text('Screenshot'),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      const PopupMenuItem(
+                        key: ValueKey('menu_gallery'),
+                        value: 'gallery',
+                        child: ListTile(
+                          leading: Icon(Icons.collections, size: 20),
+                          title: Text('Gallery'),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      if (terminalConfig.isConfigured && projectPath != null)
+                        PopupMenuItem(
+                          key: const ValueKey('menu_terminal'),
+                          value: 'terminal',
+                          child: ListTile(
+                            leading: const Icon(Icons.terminal, size: 20),
+                            title: Text(l.openInTerminal),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                    ];
+                  },
                 ),
               ],
             ),
@@ -876,6 +900,51 @@ void _executeSideEffects(
       case ChatSideEffect.scrollToBottom:
         scrollToBottom();
     }
+  }
+}
+
+Future<void> _openInTerminal(BuildContext context, String? projectPath) async {
+  if (projectPath == null) return;
+  final config = context.read<SettingsCubit>().state.terminalApp;
+  if (!config.isConfigured) return;
+
+  final bridge = context.read<BridgeService>();
+  final url = bridge.lastUrl;
+  final uri = url != null
+      ? Uri.tryParse(
+          url
+              .replaceFirst('ws://', 'http://')
+              .replaceFirst('wss://', 'https://'),
+        )
+      : null;
+  final host = uri?.host ?? '';
+
+  // Resolve SSH user from machine config
+  String? sshUser;
+  try {
+    final machines = context.read<MachineManagerCubit>().state.machines;
+    for (final item in machines) {
+      if (item.machine.host == host) {
+        sshUser = item.machine.sshUsername;
+        break;
+      }
+    }
+  } catch (_) {
+    // MachineManagerCubit may not be available
+  }
+
+  final launched = await launchTerminalApp(
+    config: config,
+    host: host,
+    sshUser: sshUser,
+    projectPath: projectPath,
+  );
+
+  if (!launched && context.mounted) {
+    final l = AppLocalizations.of(context);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.terminalAppNotInstalled)));
   }
 }
 

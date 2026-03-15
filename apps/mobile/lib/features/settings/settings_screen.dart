@@ -16,6 +16,7 @@ import 'state/settings_state.dart';
 import 'widgets/app_locale_bottom_sheet.dart';
 
 import 'widgets/speech_locale_bottom_sheet.dart';
+import 'widgets/terminal_app_bottom_sheet.dart';
 import 'widgets/theme_bottom_sheet.dart';
 import 'widgets/backup_section.dart';
 import 'widgets/usage_section.dart';
@@ -152,6 +153,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (value) => context
                           .read<SettingsCubit>()
                           .setHideVoiceInput(value),
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 16,
+                      endIndent: 16,
+                      color: cs.outlineVariant,
+                    ),
+                    // Terminal App
+                    ListTile(
+                      leading: Icon(Icons.terminal, color: cs.primary),
+                      title: Row(
+                        children: [
+                          Text(l.terminalApp),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: cs.tertiaryContainer,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              l.terminalAppExperimental,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: cs.onTertiaryContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      subtitle: Text(
+                        state.terminalApp.isConfigured
+                            ? state.terminalApp.displayName
+                            : l.terminalAppNone,
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () => showTerminalAppBottomSheet(
+                        context: context,
+                        current: state.terminalApp,
+                        onChanged: (config) => context
+                            .read<SettingsCubit>()
+                            .setTerminalApp(config),
+                        onClear: () =>
+                            context.read<SettingsCubit>().clearTerminalApp(),
+                      ),
                     ),
                   ],
                 ),

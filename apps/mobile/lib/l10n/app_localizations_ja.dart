@@ -1156,4 +1156,44 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get authHelpButton => 'ヘルプ';
+
+  @override
+  String get terminalApp => 'ターミナルアプリ';
+
+  @override
+  String get terminalAppSubtitle => '外部ターミナルアプリでプロジェクトを開く';
+
+  @override
+  String get terminalAppNone => '未設定';
+
+  @override
+  String get terminalAppCustom => 'カスタム';
+
+  @override
+  String get terminalAppName => 'アプリ名';
+
+  @override
+  String get terminalUrlTemplate => 'URL テンプレート';
+
+  @override
+  String get terminalUrlTemplateHint => '変数: host, user, port, project_path';
+
+  @override
+  String get terminalSshUser => 'SSH ユーザー';
+
+  @override
+  String get terminalSshUserHint => '未入力時はマシンの SSH ユーザーを使用';
+
+  @override
+  String get openInTerminal => 'ターミナルで開く';
+
+  @override
+  String get terminalAppNotInstalled => 'ターミナルアプリを開けませんでした';
+
+  @override
+  String get terminalAppExperimental => '実験的機能';
+
+  @override
+  String get terminalAppExperimentalNote =>
+      'この機能は実験的です。プリセットはアプリや環境によって動作しない場合があります。新しいプリセットの追加は GitHub で歓迎しています！';
 }

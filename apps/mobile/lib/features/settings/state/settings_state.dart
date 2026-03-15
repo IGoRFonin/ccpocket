@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../models/terminal_app.dart';
+
 part 'settings_state.freezed.dart';
 
 /// Keys for FCM status messages (resolved to localized strings in the UI).
@@ -57,6 +59,9 @@ abstract class SettingsState with _$SettingsState {
 
     /// Whether to hide the voice input button in the chat input bar.
     @Default(false) bool hideVoiceInput,
+
+    /// External terminal app configuration (preset or custom URL template).
+    @Default(TerminalAppConfig.empty) TerminalAppConfig terminalApp,
   }) = _SettingsState;
 
   /// Whether push notifications are enabled for the currently connected machine.

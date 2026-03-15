@@ -1171,4 +1171,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authHelpButton => 'Help';
+
+  @override
+  String get terminalApp => 'Terminal App';
+
+  @override
+  String get terminalAppSubtitle => 'Open projects in an external terminal app';
+
+  @override
+  String get terminalAppNone => 'Not configured';
+
+  @override
+  String get terminalAppCustom => 'Custom';
+
+  @override
+  String get terminalAppName => 'App Name';
+
+  @override
+  String get terminalUrlTemplate => 'URL Template';
+
+  @override
+  String get terminalUrlTemplateHint =>
+      'Variables: host, user, port, project_path';
+
+  @override
+  String get terminalSshUser => 'SSH User';
+
+  @override
+  String get terminalSshUserHint => 'Defaults to machine SSH user';
+
+  @override
+  String get openInTerminal => 'Open in Terminal';
+
+  @override
+  String get terminalAppNotInstalled => 'Could not open terminal app';
+
+  @override
+  String get terminalAppExperimental => 'Experimental';
+
+  @override
+  String get terminalAppExperimentalNote =>
+      'This feature is experimental. Presets may not work with all apps or configurations. Contributions for new presets are welcome on GitHub!';
 }

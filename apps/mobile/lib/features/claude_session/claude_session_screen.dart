@@ -10,6 +10,7 @@ import '../../hooks/use_scroll_tracking.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
 import '../../providers/bridge_cubits.dart';
+import '../../providers/machine_manager_cubit.dart';
 import '../../router/app_router.dart';
 import '../../services/bridge_service.dart';
 import '../../services/chat_message_handler.dart';
@@ -17,6 +18,8 @@ import '../../services/draft_service.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/diff_parser.dart';
+import '../../utils/terminal_launcher.dart';
+import '../settings/state/settings_cubit.dart';
 import '../../widgets/approval_bar.dart';
 import '../../widgets/bubbles/ask_user_question_widget.dart';
 import '../../widgets/message_bubble.dart';
@@ -592,54 +595,73 @@ class _ChatScreenBody extends HookWidget {
                         context.router.push(GalleryRoute(sessionId: sessionId));
                       case 'rename':
                         _renameSession(context, sessionId);
+                      case 'terminal':
+                        _openInTerminal(context, projectPath);
                     }
                   },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      key: const ValueKey('menu_rename'),
-                      value: 'rename',
-                      child: ListTile(
-                        leading: const Icon(Icons.edit_outlined, size: 20),
-                        title: Text(l.rename),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      key: const ValueKey('menu_message_history'),
-                      value: 'history',
-                      child: ListTile(
-                        leading: const Icon(Icons.chat_outlined, size: 20),
-                        title: Text(l.messageHistory),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    if (projectPath != null)
+                  itemBuilder: (context) {
+                    final terminalConfig = context
+                        .read<SettingsCubit>()
+                        .state
+                        .terminalApp;
+                    return [
                       PopupMenuItem(
-                        key: const ValueKey('menu_screenshot'),
-                        value: 'screenshot',
+                        key: const ValueKey('menu_rename'),
+                        value: 'rename',
                         child: ListTile(
-                          leading: const Icon(
-                            Icons.screenshot_monitor,
-                            size: 20,
-                          ),
-                          title: Text(l.screenshot),
+                          leading: const Icon(Icons.edit_outlined, size: 20),
+                          title: Text(l.rename),
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                    PopupMenuItem(
-                      key: const ValueKey('menu_gallery'),
-                      value: 'gallery',
-                      child: ListTile(
-                        leading: const Icon(Icons.collections, size: 20),
-                        title: Text(l.gallery),
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
+                      PopupMenuItem(
+                        key: const ValueKey('menu_message_history'),
+                        value: 'history',
+                        child: ListTile(
+                          leading: const Icon(Icons.chat_outlined, size: 20),
+                          title: Text(l.messageHistory),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
                       ),
-                    ),
-                  ],
+                      if (projectPath != null)
+                        PopupMenuItem(
+                          key: const ValueKey('menu_screenshot'),
+                          value: 'screenshot',
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.screenshot_monitor,
+                              size: 20,
+                            ),
+                            title: Text(l.screenshot),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      PopupMenuItem(
+                        key: const ValueKey('menu_gallery'),
+                        value: 'gallery',
+                        child: ListTile(
+                          leading: const Icon(Icons.collections, size: 20),
+                          title: Text(l.gallery),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      if (terminalConfig.isConfigured && projectPath != null)
+                        PopupMenuItem(
+                          key: const ValueKey('menu_terminal'),
+                          value: 'terminal',
+                          child: ListTile(
+                            leading: const Icon(Icons.terminal, size: 20),
+                            title: Text(l.openInTerminal),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                    ];
+                  },
                 ),
               ],
             ),
@@ -930,6 +952,51 @@ String? findPlanFromWriteTool(List<ChatEntry> entries) {
     }
   }
   return null;
+}
+
+Future<void> _openInTerminal(BuildContext context, String? projectPath) async {
+  if (projectPath == null) return;
+  final config = context.read<SettingsCubit>().state.terminalApp;
+  if (!config.isConfigured) return;
+
+  final bridge = context.read<BridgeService>();
+  final url = bridge.lastUrl;
+  final uri = url != null
+      ? Uri.tryParse(
+          url
+              .replaceFirst('ws://', 'http://')
+              .replaceFirst('wss://', 'https://'),
+        )
+      : null;
+  final host = uri?.host ?? '';
+
+  // Resolve SSH user from machine config
+  String? sshUser;
+  try {
+    final machines = context.read<MachineManagerCubit>().state.machines;
+    for (final item in machines) {
+      if (item.machine.host == host) {
+        sshUser = item.machine.sshUsername;
+        break;
+      }
+    }
+  } catch (_) {
+    // MachineManagerCubit may not be available
+  }
+
+  final launched = await launchTerminalApp(
+    config: config,
+    host: host,
+    sshUser: sshUser,
+    projectPath: projectPath,
+  );
+
+  if (!launched && context.mounted) {
+    final l = AppLocalizations.of(context);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.terminalAppNotInstalled)));
+  }
 }
 
 Future<void> _renameSession(BuildContext context, String sessionId) async {
