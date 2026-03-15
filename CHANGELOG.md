@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.39.0] - 2026-03-15
+
+### Added
+- Auth help screen with troubleshooting guide for authentication errors
+- Graceful handling of non-git projects
+
+### Fixed
+- Dismiss keyboard on approval UI header tap and scroll
+- Approval overlay scroll support (SingleChildScrollView)
+- Content padding overflow prevention
+- Chat content clipping above approval overlay
+- Approval overlay keyboard layout refinement
+- Bottom overlay height sync improvement
+
+### Changed
+- Refactored to unified BottomOverlayLayout for approval/question overlays
+
 ## [1.38.0] - 2026-03-13
 
 ### Added
