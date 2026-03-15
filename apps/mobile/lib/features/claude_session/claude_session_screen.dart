@@ -1,38 +1,38 @@
 import 'dart:async';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-import '../../l10n/app_localizations.dart';
 import '../../hooks/use_scroll_tracking.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
 import '../../providers/bridge_cubits.dart';
+import '../../router/app_router.dart';
 import '../../services/bridge_service.dart';
-import '../../widgets/rename_session_dialog.dart';
-import '../../services/draft_service.dart';
 import '../../services/chat_message_handler.dart';
+import '../../services/draft_service.dart';
 import '../../services/notification_service.dart';
-import '../../widgets/session_name_title.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/new_session_sheet.dart'
-    show permissionModeFromRaw, sandboxModeFromRaw;
+import '../../utils/diff_parser.dart';
 import '../../widgets/approval_bar.dart';
 import '../../widgets/bubbles/ask_user_question_widget.dart';
 import '../../widgets/message_bubble.dart';
+import '../../widgets/new_session_sheet.dart'
+    show permissionModeFromRaw, sandboxModeFromRaw;
 import '../../widgets/plan_detail_sheet.dart';
+import '../../widgets/rename_session_dialog.dart';
 import '../../widgets/screenshot_sheet.dart';
+import '../../widgets/session_name_title.dart';
 import '../../widgets/worktree_list_sheet.dart';
-import '../../utils/diff_parser.dart';
-import '../../router/app_router.dart';
 import '../chat_session/state/chat_session_cubit.dart';
 import '../chat_session/state/chat_session_state.dart';
 import '../chat_session/state/streaming_state_cubit.dart';
+import '../chat_session/widgets/bottom_overlay_layout.dart';
 import '../chat_session/widgets/branch_chip.dart';
 import '../chat_session/widgets/chat_input_with_overlays.dart';
-import '../chat_session/widgets/bottom_overlay_layout.dart';
 import '../chat_session/widgets/chat_message_list.dart';
 import '../chat_session/widgets/reconnect_banner.dart';
 import '../chat_session/widgets/session_mode_bar.dart';
@@ -664,52 +664,56 @@ class _ChatScreenBody extends HookWidget {
                             askInput == null &&
                             pendingToolUseId == null
                         ? null
-                        : Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (askToolUseId != null && askInput != null)
-                                AskUserQuestionWidget(
-                                  toolUseId: askToolUseId,
-                                  input: askInput,
-                                  onAnswer: answerQuestion,
-                                  scrollable: false,
-                                ),
-                              if (pendingToolUseId != null)
-                                ApprovalBar(
-                                  key: ValueKey('approval_$pendingToolUseId'),
-                                  appColors: appColors,
-                                  pendingPermission: pendingPermission,
-                                  isPlanApproval: isPlanApproval,
-                                  planFeedbackController:
-                                      planFeedbackController,
-                                  onApprove: approveToolUse,
-                                  onReject: rejectToolUse,
-                                  onApproveAlways: approveAlwaysToolUse,
-                                  onApproveClearContext: isPlanApproval
-                                      ? approveWithClearContext
-                                      : null,
-                                  onViewPlan: isPlanApproval
-                                      ? () async {
-                                          final originalText = _extractPlanText(
-                                            sessionState.entries,
-                                          );
-                                          if (originalText == null) return;
-                                          final current =
-                                              editedPlanText.value ??
-                                              originalText;
-                                          final edited =
-                                              await showPlanDetailSheet(
-                                                context,
-                                                current,
-                                                editable: true,
-                                              );
-                                          if (edited != null) {
-                                            editedPlanText.value = edited;
+                        : SingleChildScrollView(
+                            reverse: true,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (askToolUseId != null && askInput != null)
+                                  AskUserQuestionWidget(
+                                    toolUseId: askToolUseId,
+                                    input: askInput,
+                                    onAnswer: answerQuestion,
+                                    scrollable: false,
+                                  ),
+                                if (pendingToolUseId != null)
+                                  ApprovalBar(
+                                    key: ValueKey('approval_$pendingToolUseId'),
+                                    appColors: appColors,
+                                    pendingPermission: pendingPermission,
+                                    isPlanApproval: isPlanApproval,
+                                    planFeedbackController:
+                                        planFeedbackController,
+                                    onApprove: approveToolUse,
+                                    onReject: rejectToolUse,
+                                    onApproveAlways: approveAlwaysToolUse,
+                                    onApproveClearContext: isPlanApproval
+                                        ? approveWithClearContext
+                                        : null,
+                                    onViewPlan: isPlanApproval
+                                        ? () async {
+                                            final originalText =
+                                                _extractPlanText(
+                                                  sessionState.entries,
+                                                );
+                                            if (originalText == null) return;
+                                            final current =
+                                                editedPlanText.value ??
+                                                originalText;
+                                            final edited =
+                                                await showPlanDetailSheet(
+                                                  context,
+                                                  current,
+                                                  editable: true,
+                                                );
+                                            if (edited != null) {
+                                              editedPlanText.value = edited;
+                                            }
                                           }
-                                        }
-                                      : null,
-                                ),
-                            ],
+                                        : null,
+                                  ),
+                              ],
+                            ),
                           ),
                     topOverlay: const Positioned(
                       top: 0,
