@@ -1,14 +1,14 @@
 ---
-name: release-mobile
-description: モバイルアプリのリリース（バージョンbump + CHANGELOG + タグ → GH Actions で Shorebird release + ストア配布）
+name: release-app
+description: アプリのリリース（バージョンbump + CHANGELOG + タグ → GH Actions で自動ビルド・配布）。iOS / Android / macOS の任意の組み合わせでリリースできる。「リリース」「バージョン上げて」「リリースして」と言われたときに使う。
 disable-model-invocation: true
 allowed-tools: Bash(git:*), Bash(grep:*), Bash(dart analyze:*), Bash(cd apps/mobile && flutter test), Read, Edit, AskUserQuestion
 ---
 
-# モバイルアプリ リリース
+# アプリ リリース
 
-Flutter モバイルアプリのリリースを行う。
-タグ push 後は GH Actions が自動で Shorebird release + ストア配布 + GitHub Release を作成する。
+Flutter アプリのリリースを行う。
+タグ push 後は GH Actions が自動でビルド・署名・配布・GitHub Release を作成する。
 
 ## 前提
 
@@ -28,11 +28,11 @@ grep '^version:' apps/mobile/pubspec.yaml
 前回リリースからの差分を確認する:
 
 ```bash
-# 前回のタグ（iOS/Android どちらか新しい方）
-git tag -l 'ios/v*' 'android/v*' --sort=-v:refname | head -1
+# 前回のタグ（iOS/Android/macOS のいずれか新しい方）
+git tag -l 'ios/v*' 'android/v*' 'macos/v*' --sort=-v:refname | head -1
 
 # 差分コミット（bridge 以外）
-git log $(git tag -l 'ios/v*' 'android/v*' --sort=-v:refname | head -1)..HEAD --oneline -- apps/mobile/ CHANGELOG.md
+git log $(git tag -l 'ios/v*' 'android/v*' 'macos/v*' --sort=-v:refname | head -1)..HEAD --oneline -- apps/mobile/ CHANGELOG.md
 ```
 
 ### 2. バージョンとプラットフォームをユーザーに確認
@@ -51,8 +51,10 @@ build number は現在の値 +1 で統一する。
 
 #### 質問 2: プラットフォーム
 
-以下の3択:
-- **iOS + Android 両方** (Recommended)
+以下の選択肢を提示する:
+- **iOS + Android + macOS 全部** (Recommended)
+- **iOS + Android のみ**（モバイルのみ）
+- **macOS のみ**
 - **iOS のみ**
 - **Android のみ**
 
@@ -113,6 +115,10 @@ git push origin ios/vX.Y.Z+N
 # Android（選択された場合）
 git tag android/vX.Y.Z+N
 git push origin android/vX.Y.Z+N
+
+# macOS（選択された場合）
+git tag macos/vX.Y.Z+N
+git push origin macos/vX.Y.Z+N
 ```
 
 ### 7. 完了確認
@@ -123,13 +129,13 @@ git push origin android/vX.Y.Z+N
 |-----|------------|------|
 | `ios/v*` | `ios-release.yml` | Shorebird release iOS → TestFlight → GitHub Release |
 | `android/v*` | `android-release.yml` | Shorebird release Android → Google Play (internal draft) → GitHub Release |
+| `macos/v*` | `macos-release.yml` | Developer ID 署名 → 公証 → DMG → GitHub Release |
 
 ```bash
-# iOS タグを打った場合
+# 各プラットフォームのワークフロー確認（タグを打ったもののみ）
 gh run list --workflow=ios-release.yml --limit 1
-
-# Android タグを打った場合
 gh run list --workflow=android-release.yml --limit 1
+gh run list --workflow=macos-release.yml --limit 1
 ```
 
 成功を確認したら完了。

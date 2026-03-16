@@ -262,7 +262,7 @@ cd apps/mobile/build/web && python3 -m http.server 8888
 | スキル | 呼び出し | 説明 |
 |--------|---------|------|
 | release-bridge | `/release-bridge` | Bridge Server リリース（version bump + CHANGELOG + タグ → npm publish） |
-| release-mobile | `/release-mobile` | モバイルアプリ リリース（version bump + CHANGELOG + タグ → Shorebird + ストア配布） |
+| release-app | `/release-app` | アプリ リリース（version bump + CHANGELOG + タグ → iOS/Android/macOS 自動ビルド・配布） |
 | shorebird-patch | `/shorebird-patch` | Shorebird OTA パッチ作成（staging → promote → stable） |
 | test-bridge | `/test-bridge` | Bridge Server の Vitest テスト実行・TypeScript型チェック |
 | test-flutter | `/test-flutter` | Flutter App のテスト実行・dart analyze・format |
@@ -292,8 +292,8 @@ Bridge と Flutter の両方に影響がある場合は両方実行する。
 # Bridge Server リリース → npm publish + GitHub Release
 /release-bridge
 
-# モバイルアプリ リリース → Shorebird release + ストア配布 + GitHub Release
-/release-mobile
+# アプリ リリース → iOS/Android (Shorebird + ストア) + macOS (署名 + DMG) + GitHub Release
+/release-app
 ```
 
 ### OTA パッチ（staging → promote → stable）
