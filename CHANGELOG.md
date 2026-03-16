@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.40.0] - 2026-03-16
+
+### Added
+- macOS desktop support
+- Desktop keyboard shortcuts (Enter to send, Shift+Enter for newline)
+- Drag & drop image attachment on desktop
+- Cmd/Ctrl+V clipboard image paste (with text paste fallback)
+- macOS release workflow (Developer ID signing + notarization + DMG)
+
+### Changed
+- Disabled mobile-only features on desktop (QR scan, voice input, Shorebird OTA, store review)
+
 ## [1.39.0] - 2026-03-15
 
 ### Added
