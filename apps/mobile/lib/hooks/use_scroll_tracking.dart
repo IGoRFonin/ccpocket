@@ -5,6 +5,10 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 /// Cross-session scroll offset persistence.
 final Map<String, double> _scrollOffsets = {};
 
+/// Minimum change in maxScrollExtent (in logical pixels) to be considered a
+/// layout-driven shift rather than floating-point rounding noise.
+const _kExtentChangeTolerance = 1.0;
+
 /// Result record returned by [useScrollTracking].
 typedef ScrollTrackingResult = ({
   AutoScrollController controller,
@@ -30,10 +34,30 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
   // Ref to track isScrolledUp without rebuilds (for scrollToBottom closure).
   final isScrolledUpRef = useRef(false);
 
+  // Track previous maxScrollExtent to detect layout-driven changes
+  // (e.g. Android notification shade toggling safe-area padding).
+  final prevMaxExtent = useRef<double?>(null);
+
   useEffect(() {
     void onScroll() {
       if (!controller.hasClients) return;
       final pos = controller.position;
+
+      final prevMax = prevMaxExtent.value;
+      prevMaxExtent.value = pos.maxScrollExtent;
+
+      // When maxScrollExtent shifts (viewport/layout change) while we were
+      // already at the bottom, ignore this event — don't flip isScrolledUp.
+      // The framework will settle the scroll position on the next frame.
+      // This prevents the FAB from flashing when the Android notification
+      // shade is pulled down/up.
+      // Note: when isScrolledUp is already true (user scrolled up), we don't
+      // guard — the user's intent takes priority over layout shifts.
+      if (prevMax != null && !isScrolledUpRef.value) {
+        final extentDelta = (pos.maxScrollExtent - prevMax).abs();
+        if (extentDelta > _kExtentChangeTolerance) return;
+      }
+
       final scrolled = pos.pixels < pos.maxScrollExtent - 100;
       isScrolledUpRef.value = scrolled;
       if (scrolled != isScrolledUp.value) {
@@ -57,6 +81,7 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
         _scrollOffsets[sessionId] = controller.offset;
       }
       controller.removeListener(onScroll);
+      prevMaxExtent.value = null;
     };
   }, [sessionId]);
 
