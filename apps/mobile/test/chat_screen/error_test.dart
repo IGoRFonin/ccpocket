@@ -1,5 +1,7 @@
 import 'package:ccpocket/features/chat_session/widgets/chat_input_with_overlays.dart';
 import 'package:ccpocket/models/messages.dart';
+import 'package:ccpocket/widgets/bubbles/assistant_bubble.dart';
+import 'package:ccpocket/widgets/bubbles/error_bubble.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol_finders/patrol_finders.dart';
 
@@ -60,13 +62,13 @@ void main() {
       ]);
       await pumpN($.tester);
 
-      // Title should be shown
-      expect($('Authentication Error'), findsOneWidget);
-      // Hint text should mention claude auth login
+      expect($('Claude login required'), findsOneWidget);
       expect(
-        $('Run "claude auth login" on the Bridge machine'),
+        $('Claude Code needs to sign in again on the Bridge machine.'),
         findsOneWidget,
       );
+      expect($('claude'), findsOneWidget);
+      expect($('/login'), findsOneWidget);
     });
 
     patrolWidgetTest('I4: token expired error shows expired hint', ($) async {
@@ -83,9 +85,9 @@ void main() {
       ]);
       await pumpN($.tester);
 
-      expect($('Authentication Error'), findsOneWidget);
+      expect($('Claude login required'), findsOneWidget);
       expect(
-        $('Run "claude auth login" on the Bridge machine'),
+        $('Claude Code needs to sign in again on the Bridge machine.'),
         findsOneWidget,
       );
     });
@@ -115,11 +117,43 @@ void main() {
         ]);
         await pumpN($.tester);
 
-        expect($('Authentication Error'), findsOneWidget);
+        expect($('Claude login required'), findsOneWidget);
         expect(
-          $('Run "claude auth login" on the Bridge machine'),
+          $('Claude Code needs to sign in again on the Bridge machine.'),
           findsOneWidget,
         );
+      },
+    );
+
+    patrolWidgetTest(
+      'I4c: assistant guidance mentioning auth login is not promoted to auth error',
+      ($) async {
+        await $.pumpWidget(await buildTestChatScreen(bridge: bridge));
+        await pumpN($.tester);
+
+        await emitAndPump($.tester, bridge, [
+          const StatusMessage(status: ProcessStatus.running),
+          AssistantServerMessage(
+            message: AssistantMessage(
+              id: 'guidance-only',
+              role: 'assistant',
+              model: 'claude-opus-4-6',
+              content: [
+                TextContent(
+                  text:
+                      '方向性は正しいです。必要なら `claude auth login` も使えますが、'
+                      '`claude` を開いて `/login` を使う方が分かりやすいです。',
+                ),
+              ],
+            ),
+          ),
+        ]);
+        await pumpN($.tester);
+
+        expect($('Claude login required'), findsNothing);
+        expect($('Authentication Error'), findsNothing);
+        expect(find.byType(ErrorBubble), findsNothing);
+        expect(find.byType(AssistantBubble), findsOneWidget);
       },
     );
 

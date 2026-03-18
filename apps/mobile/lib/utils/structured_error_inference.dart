@@ -44,7 +44,6 @@ String? inferStructuredErrorCode({
     'authentication failed',
     'api error: 401',
     '401 unauthorized',
-    'claude auth login',
     'claude code authentication failed',
     'oauth token',
   ])) {
