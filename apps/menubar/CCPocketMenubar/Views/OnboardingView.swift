@@ -171,16 +171,25 @@ struct OnboardingView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(step.comment)
-                    .font(.caption2)
-                    .foregroundStyle(step.isPassed ? .tertiary : .secondary)
+                ForEach(Array(step.commands.enumerated()), id: \.element.id) { idx, cmd in
+                    if idx > 0 {
+                        Text(String(localized: "or"))
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
 
-                CommandRow(command: step.command) {
-                    #if DEBUG
-                    doctorVM.markCommandCompleted(step.command)
-                    #endif
+                    Text(cmd.comment)
+                        .font(.caption2)
+                        .foregroundStyle(cmd.isPassed ? .tertiary : .secondary)
+
+                    CommandRow(command: cmd.command) {
+                        #if DEBUG
+                        doctorVM.markCommandCompleted(cmd.command)
+                        #endif
+                    }
+                    .opacity(cmd.isPassed ? 0.5 : 1)
                 }
-                .opacity(step.isPassed ? 0.5 : 1)
             }
         }
     }
@@ -273,32 +282,67 @@ struct OnboardingView: View {
 
     // MARK: - Step Builder
 
-    private struct SetupStep {
+    private struct SetupCommand: Identifiable {
+        let id = UUID()
         let comment: String
         let command: String
         let isPassed: Bool
     }
 
+    private struct SetupStep {
+        /// Multiple commands = "pick one" (shown with "or" separator)
+        let commands: [SetupCommand]
+
+        var isPassed: Bool {
+            commands.contains { $0.isPassed }
+        }
+    }
+
     private func buildStepList(report: DoctorReport) -> [SetupStep] {
         var steps: [SetupStep] = []
+        var seenChecks: Set<String> = []
 
         for check in report.results {
+            // Bridge Server and launchd share the same command — deduplicate
+            let groupKey: String
+            if check.name == "Bridge Server" || check.name == "launchd service" {
+                groupKey = "bridge"
+            } else {
+                groupKey = check.name
+            }
+            guard !seenChecks.contains(groupKey) else { continue }
+            seenChecks.insert(groupKey)
+
             let commands = doctorVM.allSetupCommands(for: check)
             guard !commands.isEmpty else { continue }
 
             let checkPassed = check.status == "pass"
-            for entry in commands {
-                #if DEBUG
-                let commandDone = doctorVM.completedCommands.contains(entry.command)
-                let isPassed = checkPassed || commandDone
-                #else
-                let isPassed = checkPassed
-                #endif
-                steps.append(SetupStep(
-                    comment: entry.comment,
-                    command: entry.command,
-                    isPassed: isPassed
-                ))
+            let isPickOne = check.name == "CLI providers" && commands.count > 1
+
+            if isPickOne {
+                // Group all commands into one step (pick one)
+                let cmds = commands.map { entry -> SetupCommand in
+                    #if DEBUG
+                    let done = doctorVM.completedCommands.contains(entry.command)
+                    return SetupCommand(comment: entry.comment, command: entry.command, isPassed: checkPassed || done)
+                    #else
+                    return SetupCommand(comment: entry.comment, command: entry.command, isPassed: checkPassed)
+                    #endif
+                }
+                steps.append(SetupStep(commands: cmds))
+            } else {
+                // One command per step
+                for entry in commands {
+                    #if DEBUG
+                    let done = doctorVM.completedCommands.contains(entry.command)
+                    let passed = checkPassed || done
+                    #else
+                    let passed = checkPassed
+                    #endif
+                    steps.append(SetupStep(commands: [
+                        SetupCommand(comment: entry.comment, command: entry.command, isPassed: passed),
+                    ]))
+                }
             }
         }
 

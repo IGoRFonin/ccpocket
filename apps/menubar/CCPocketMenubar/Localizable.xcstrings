@@ -448,6 +448,12 @@
       }
     },
 
+    "or" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "または" } }
+      }
+    },
+
     "Bridge Server" : {
       "comment" : "Doctor check name",
       "localizations" : {

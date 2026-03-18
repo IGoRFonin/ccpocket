@@ -222,40 +222,12 @@ final class DoctorViewModel: ObservableObject {
             ]
 
         case "CLI providers" where check.status != "pass":
-            var commands: [(comment: String, command: String)] = []
-            if let providers = check.providers {
-                for provider in providers {
-                    if !provider.installed {
-                        switch provider.name {
-                        case "Claude Code CLI":
-                            commands.append(("Install Claude Code CLI", "npm install -g @anthropic-ai/claude-code"))
-                        case "Codex CLI":
-                            commands.append(("Install Codex CLI", "npm install -g @openai/codex"))
-                        default:
-                            break
-                        }
-                    } else if !provider.authenticated {
-                        switch provider.name {
-                        case "Claude Code CLI":
-                            commands.append(("Login to Claude Code", "claude login"))
-                        case "Codex CLI":
-                            commands.append(("Login to Codex", "codex login"))
-                        default:
-                            break
-                        }
-                    }
-                }
-            }
-            return commands
+            return cliProviderCommands(for: check)
 
-        case "Bridge Server" where check.status != "pass":
+        case "Bridge Server" where check.status != "pass",
+             "launchd service" where check.status != "pass":
             return [
-                ("Install Bridge Server", "npm install -g @ccpocket/bridge"),
-            ]
-
-        case "launchd service" where check.status != "pass":
-            return [
-                ("Set up Bridge as a background service", "npx @ccpocket/bridge@latest setup"),
+                ("Set up Bridge (install + register as service)", "npx @ccpocket/bridge@latest setup"),
             ]
 
         default:
@@ -273,34 +245,50 @@ final class DoctorViewModel: ObservableObject {
             ]
 
         case "CLI providers":
-            var commands: [(comment: String, command: String)] = []
-            if let providers = check.providers {
-                for provider in providers {
-                    switch provider.name {
-                    case "Claude Code CLI":
-                        commands.append(provider.installed && !provider.authenticated
-                            ? ("Login to Claude Code", "claude login")
-                            : ("Install Claude Code CLI", "npm install -g @anthropic-ai/claude-code"))
-                    case "Codex CLI":
-                        commands.append(provider.installed && !provider.authenticated
-                            ? ("Login to Codex", "codex login")
-                            : ("Install Codex CLI", "npm install -g @openai/codex"))
-                    default:
-                        break
-                    }
-                }
-            }
-            return commands
+            return cliProviderCommands(for: check)
 
-        case "Bridge Server":
-            return [("Install Bridge Server", "npm install -g @ccpocket/bridge")]
-
-        case "launchd service":
-            return [("Set up Bridge as a background service", "npx @ccpocket/bridge@latest setup")]
+        case "Bridge Server", "launchd service":
+            return [
+                ("Set up Bridge (install + register as service)", "npx @ccpocket/bridge@latest setup"),
+            ]
 
         default:
             return []
         }
+    }
+
+    /// Build CLI provider commands. Either provider is sufficient.
+    /// Shows both as options when neither is installed.
+    private func cliProviderCommands(for check: CheckResult) -> [(comment: String, command: String)] {
+        guard let providers = check.providers else { return [] }
+
+        var commands: [(comment: String, command: String)] = []
+
+        for provider in providers {
+            if provider.installed && !provider.authenticated {
+                // Needs login
+                switch provider.name {
+                case "Claude Code CLI":
+                    commands.append(("Login to Claude Code", "claude login"))
+                case "Codex CLI":
+                    commands.append(("Login to Codex", "codex login"))
+                default:
+                    break
+                }
+            } else if !provider.installed {
+                // Needs install
+                switch provider.name {
+                case "Claude Code CLI":
+                    commands.append(("Install Claude Code (either one is OK)", "curl -fsSL https://claude.ai/install.sh | bash"))
+                case "Codex CLI":
+                    commands.append(("Install Codex (either one is OK)", "npm install -g @openai/codex"))
+                default:
+                    break
+                }
+            }
+        }
+
+        return commands
     }
 
     private func performAction(_ label: String, action: @escaping () async throws -> Void) {
