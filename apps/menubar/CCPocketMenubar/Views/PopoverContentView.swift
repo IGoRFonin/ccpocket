@@ -11,33 +11,14 @@ struct PopoverContentView: View {
 
     var body: some View {
         GlassEffectContainer {
-            VStack(spacing: 0) {
-                HeaderView(viewModel: viewModel)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-
-                GlassTabBar(selectedTab: $viewModel.selectedTab)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 4)
-
-                // Content area with directional slide transition
-                ZStack {
-                    switch viewModel.selectedTab {
-                    case .usage:
-                        UsagePageView(viewModel: usageVM, bridgeStatus: viewModel.bridgeStatus)
-                            .transition(slideTransition)
-                    case .qrCode:
-                        QRCodePageView(viewModel: qrCodeVM)
-                            .transition(slideTransition)
-                    case .doctor:
-                        DoctorPageView(viewModel: doctorVM)
-                            .transition(slideTransition)
+            Group {
+                if viewModel.hasCompletedOnboarding {
+                    mainContent
+                } else {
+                    OnboardingView(doctorVM: doctorVM) {
+                        viewModel.completeOnboarding()
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .animation(.smooth(duration: 0.3), value: viewModel.selectedTab)
             }
             .frame(width: 380, height: 500)
             .glassEffect(.regular, in: .rect(cornerRadius: 12))
@@ -61,6 +42,42 @@ struct PopoverContentView: View {
             if viewModel.selectedTab == .usage {
                 usageVM.fetchUsage()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            HeaderView(viewModel: viewModel)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            GlassTabBar(selectedTab: $viewModel.selectedTab)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+
+            // Content area with directional slide transition
+            ZStack {
+                switch viewModel.selectedTab {
+                case .usage:
+                    UsagePageView(viewModel: usageVM, bridgeStatus: viewModel.bridgeStatus)
+                        .transition(slideTransition)
+                case .qrCode:
+                    QRCodePageView(viewModel: qrCodeVM)
+                        .transition(slideTransition)
+                case .doctor:
+                    DoctorPageView(
+                        viewModel: doctorVM,
+                        bridgeUpdateAvailable: viewModel.bridgeUpdateAvailable,
+                        onUpdateBridge: { doctorVM.updateBridge() }
+                    )
+                        .transition(slideTransition)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+            .animation(.smooth(duration: 0.3), value: viewModel.selectedTab)
         }
     }
 

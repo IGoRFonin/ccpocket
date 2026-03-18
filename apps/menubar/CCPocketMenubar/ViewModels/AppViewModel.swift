@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import ServiceManagement
 
 enum BridgeStatus {
     case running
@@ -61,8 +62,31 @@ final class AppViewModel: ObservableObject {
     @Published var bridgeVersion: String?
     @Published var selectedTab: AppTab = .usage
 
+    /// Set when a newer Bridge version is available on npm
+    @Published var bridgeUpdateAvailable: String?
+
+    /// Launch at Login state
+    @Published var launchAtLogin: Bool = false {
+        didSet {
+            setLaunchAtLogin(launchAtLogin)
+        }
+    }
+
+    /// Whether onboarding has been completed
+    @Published var hasCompletedOnboarding: Bool
+
     private let bridgeClient = BridgeClient()
     private let processManager = BridgeProcessManager()
+
+    init() {
+        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+
+    func completeOnboarding() {
+        hasCompletedOnboarding = true
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+    }
 
     func toggleBridge() {
         Task {
@@ -91,8 +115,37 @@ final class AppViewModel: ObservableObject {
             if running {
                 if let version = try? await bridgeClient.version() {
                     bridgeVersion = version.version
+                    // Check for updates in background
+                    checkForBridgeUpdate(currentVersion: version.version)
                 }
             }
+        }
+    }
+
+    // MARK: - Bridge Update Check
+
+    private func checkForBridgeUpdate(currentVersion: String) {
+        Task {
+            guard let latest = await processManager.latestBridgeVersion() else { return }
+            if latest != currentVersion {
+                bridgeUpdateAvailable = latest
+            } else {
+                bridgeUpdateAvailable = nil
+            }
+        }
+    }
+
+    // MARK: - Launch at Login
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            print("Failed to set launch at login: \(error)")
         }
     }
 }

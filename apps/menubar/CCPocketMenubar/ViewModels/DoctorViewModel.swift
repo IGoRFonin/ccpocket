@@ -18,6 +18,11 @@ final class DoctorViewModel: ObservableObject {
         report?.results.filter { $0.category == "optional" } ?? []
     }
 
+    /// Whether all checks pass (used for onboarding completion detection).
+    var allPassed: Bool {
+        report?.allRequiredPassed ?? false
+    }
+
     func runDoctor() {
         guard !isRunning else { return }
         isRunning = true
@@ -54,6 +59,12 @@ final class DoctorViewModel: ObservableObject {
     func installClaudeCode() {
         performAction("Installing Claude Code…") {
             try await self.processManager.installClaudeCode()
+        }
+    }
+
+    func installCodex() {
+        performAction("Installing Codex…") {
+            try await self.processManager.installCodex()
         }
     }
 

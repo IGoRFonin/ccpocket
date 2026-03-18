@@ -2,6 +2,8 @@ import SwiftUI
 
 struct DoctorPageView: View {
     @ObservedObject var viewModel: DoctorViewModel
+    var bridgeUpdateAvailable: String?
+    var onUpdateBridge: (() -> Void)?
 
     var body: some View {
         Group {
@@ -16,6 +18,29 @@ struct DoctorPageView: View {
             } else if let report = viewModel.report {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
+                        // Bridge update banner
+                        if let newVersion = bridgeUpdateAvailable {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundStyle(.orange)
+                                    .font(.caption)
+
+                                Text("Bridge v\(newVersion) available")
+                                    .font(.caption)
+
+                                Spacer()
+
+                                Button("Update") {
+                                    onUpdateBridge?()
+                                }
+                                .controlSize(.small)
+                                .buttonStyle(.borderedProminent)
+                                .tint(.orange)
+                            }
+                            .padding(12)
+                            .background(.orange.opacity(0.1), in: .rect(cornerRadius: 10))
+                        }
+
                         // Summary card
                         HStack(spacing: 10) {
                             Image(systemName: report.allRequiredPassed
@@ -122,6 +147,9 @@ struct DoctorPageView: View {
                         onAction: actionFor(check),
                         onProviderLogin: { providerName in
                             viewModel.loginProvider(providerName)
+                        },
+                        onProviderInstall: { providerName in
+                            installProvider(providerName)
                         }
                     )
                     .padding(.horizontal, 14)
@@ -142,6 +170,17 @@ struct DoctorPageView: View {
             return { viewModel.setupBridge() }
         default:
             return nil
+        }
+    }
+
+    private func installProvider(_ providerName: String) {
+        switch providerName {
+        case "Claude Code CLI":
+            viewModel.installClaudeCode()
+        case "Codex CLI":
+            viewModel.installCodex()
+        default:
+            break
         }
     }
 }

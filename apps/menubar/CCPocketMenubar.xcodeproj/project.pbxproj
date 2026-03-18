@@ -17,6 +17,7 @@
 		40C89AE541CB62C2E52B528F /* PopoverContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5F81F39B8F73A99FA9939D /* PopoverContentView.swift */; };
 		438F20D1D87D9360E1292BDC /* DoctorPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0E8CEC707F78422335AEE7 /* DoctorPageView.swift */; };
 		56E1B7C4400C711E2B86A0B0 /* NetworkDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F8950F2CC3D55E777965D7 /* NetworkDiscovery.swift */; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* OnboardingView.swift */; };
 		609035DDED7F99FD81B8A76F /* BridgeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1067826AF18FF36F61BF867B /* BridgeHealth.swift */; };
 		63CAE352DEAE68DDF250B591 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C24596276E2677B95F21427 /* HeaderView.swift */; };
 		66716FF5169422740D206D28 /* QRCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8DE1EDA1A4027DB2BA1A1D /* QRCodeGenerator.swift */; };
@@ -52,6 +53,7 @@
 		66E0D41CC90215322F044514 /* UsageInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageInfo.swift; sourceTree = "<group>"; };
 		76F28FE1882F709B59896A80 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		85F8950F2CC3D55E777965D7 /* NetworkDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkDiscovery.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		936425EFA8842888C2FAF5F1 /* UsageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageViewModel.swift; sourceTree = "<group>"; };
 		9811360475EEBE560AAFB78D /* DoctorReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoctorReport.swift; sourceTree = "<group>"; };
 		B166330BE9C9D32E7DA0457F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				4C24596276E2677B95F21427 /* HeaderView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* OnboardingView.swift */,
 				1E5F81F39B8F73A99FA9939D /* PopoverContentView.swift */,
 				DA7943B31C5A67322CF4D294 /* DoctorPage */,
 				D4E0C9CC159BC9C2B40E5E3D /* QRCodePage */,
@@ -273,6 +276,7 @@
 				63CAE352DEAE68DDF250B591 /* HeaderView.swift in Sources */,
 				95A2815828723543B1798BA8 /* MenuBarApp.swift in Sources */,
 				56E1B7C4400C711E2B86A0B0 /* NetworkDiscovery.swift in Sources */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* OnboardingView.swift in Sources */,
 				40C89AE541CB62C2E52B528F /* PopoverContentView.swift in Sources */,
 				66716FF5169422740D206D28 /* QRCodeGenerator.swift in Sources */,
 				1D8AE90E4814BA34E47AF3D5 /* QRCodePageView.swift in Sources */,

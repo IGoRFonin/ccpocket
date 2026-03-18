@@ -48,6 +48,8 @@ final class BridgeProcessManager: Sendable {
         }
     }
 
+    // MARK: - Service Management
+
     /// Check if the launchd service is registered.
     func isServiceRegistered() async -> Bool {
         do {
@@ -86,8 +88,32 @@ final class BridgeProcessManager: Sendable {
         try await shell("npm install -g @ccpocket/bridge@latest", timeout: 120)
     }
 
-    /// Install Node.js via Homebrew.
+    // MARK: - Dependency Installation
+
+    /// Check if Homebrew is installed.
+    func isHomebrewInstalled() async -> Bool {
+        do {
+            try await shell("which brew")
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Install Homebrew (official install script).
+    func installHomebrew() async throws {
+        try await shell(
+            "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+            timeout: 600
+        )
+    }
+
+    /// Install Node.js via Homebrew. Installs Homebrew first if needed.
     func installNodeViaHomebrew() async throws {
+        let hasBrew = await isHomebrewInstalled()
+        if !hasBrew {
+            try await installHomebrew()
+        }
         try await shell("brew install node", timeout: 300)
     }
 
@@ -95,6 +121,13 @@ final class BridgeProcessManager: Sendable {
     func installClaudeCode() async throws {
         try await shell("npm install -g @anthropic-ai/claude-code", timeout: 120)
     }
+
+    /// Install Codex CLI.
+    func installCodex() async throws {
+        try await shell("npm install -g @openai/codex", timeout: 120)
+    }
+
+    // MARK: - Authentication
 
     /// Open browser-based OAuth login for a CLI provider.
     /// This spawns `claude auth login` (or equivalent) which opens the user's
@@ -112,15 +145,50 @@ final class BridgeProcessManager: Sendable {
             throw ProcessError.nonZeroExit(status: 1, output: "Unknown provider: \(providerName)")
         }
     }
+
+    // MARK: - Version Check
+
+    /// Get the latest available version of Bridge from npm.
+    func latestBridgeVersion() async -> String? {
+        guard let output = try? await shell("npm view @ccpocket/bridge version", timeout: 10) else {
+            return nil
+        }
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
+
+// MARK: - Error Types
 
 enum ProcessError: LocalizedError {
     case nonZeroExit(status: Int32, output: String)
 
     var errorDescription: String? {
         switch self {
-        case .nonZeroExit(let status, let output):
-            return "Process exited with status \(status): \(output)"
+        case .nonZeroExit(_, let output):
+            // Provide user-friendly messages for common failures
+            let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if trimmed.contains("command not found: brew") {
+                return "Homebrew is not installed. Please install it first."
+            }
+            if trimmed.contains("command not found: node") || trimmed.contains("command not found: npm") {
+                return "Node.js is not installed. Please install it first."
+            }
+            if trimmed.contains("command not found: claude") {
+                return "Claude Code CLI is not installed."
+            }
+            if trimmed.contains("EACCES") || trimmed.contains("permission denied") {
+                return "Permission denied. You may need to fix npm permissions."
+            }
+            if trimmed.contains("ETIMEDOUT") || trimmed.contains("network") {
+                return "Network error. Please check your internet connection."
+            }
+
+            // Truncate long outputs for readability
+            if trimmed.count > 200 {
+                return String(trimmed.suffix(200))
+            }
+            return trimmed.isEmpty ? "Command failed" : trimmed
         }
     }
 }

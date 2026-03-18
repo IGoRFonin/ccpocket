@@ -20,12 +20,36 @@ struct HeaderView: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+
+                // Update badge
+                if viewModel.bridgeUpdateAvailable != nil {
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 6, height: 6)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .glassEffect(.regular.interactive(), in: .capsule)
 
             Spacer()
+
+            // Launch at Login toggle
+            Button {
+                viewModel.launchAtLogin.toggle()
+            } label: {
+                Image(systemName: viewModel.launchAtLogin
+                      ? "sunrise.fill" : "sunrise")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(viewModel.launchAtLogin ? .orange : .secondary)
+                    .frame(width: 28, height: 28)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.borderless)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .help(viewModel.launchAtLogin
+                  ? "Disable Launch at Login"
+                  : "Enable Launch at Login")
 
             // Start/Stop button
             Button {

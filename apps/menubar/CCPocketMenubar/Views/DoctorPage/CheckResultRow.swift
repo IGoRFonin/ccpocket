@@ -4,6 +4,7 @@ struct CheckResultRow: View {
     let check: CheckResult
     let onAction: (() -> Void)?
     var onProviderLogin: ((String) -> Void)?
+    var onProviderInstall: ((String) -> Void)?
 
     private var statusColor: Color {
         switch check.status {
@@ -45,6 +46,19 @@ struct CheckResultRow: View {
                             .font(.caption)
 
                         Spacer()
+
+                        // Install button for uninstalled providers
+                        if !provider.installed {
+                            Button {
+                                onProviderInstall?(provider.name)
+                            } label: {
+                                Label("Install", systemImage: "arrow.down.circle")
+                                    .font(.caption2)
+                            }
+                            .controlSize(.small)
+                            .buttonStyle(.borderedProminent)
+                            .tint(.accentColor)
+                        }
 
                         // Login button for installed but unauthenticated providers
                         if provider.installed && !provider.authenticated {
