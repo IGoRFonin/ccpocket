@@ -313,6 +313,24 @@ class _ChatScreenBody extends HookWidget {
         lifecycleState != null && lifecycleState != AppLifecycleState.resumed;
     final scroll = useScrollTracking(sessionId);
 
+    // --- Keep chat content visible when keyboard appears ---
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
+    final prevKeyboardRef = useRef(0.0);
+    useEffect(() {
+      final prevKb = prevKeyboardRef.value;
+      prevKeyboardRef.value = keyboardHeight;
+      final delta = keyboardHeight - prevKb;
+      if (delta != 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!scroll.controller.hasClients) return;
+          final pos = scroll.controller.position;
+          final target = (pos.pixels + delta).clamp(0.0, pos.maxScrollExtent);
+          scroll.controller.jumpTo(target);
+        });
+      }
+      return null;
+    }, [keyboardHeight]);
+
     // Plan feedback controller (for plan approval rejection message)
     final planFeedbackController = useTextEditingController();
 
@@ -810,7 +828,7 @@ class _ChatScreenBody extends HookWidget {
                       pendingPlanToolUseId: pendingPlanToolUseId,
                       onScrollToBottom: scroll.scrollToBottom,
                       scrollToUserEntry: scrollToUserEntry,
-                      bottomPadding: 8,
+                      bottomPadding: overlayHeight + 8,
                     ),
                   ),
                 ),
