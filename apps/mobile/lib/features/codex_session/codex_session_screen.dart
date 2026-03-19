@@ -8,7 +8,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 
 import '../../constants/feature_flags.dart';
 import '../../hooks/use_app_resume_callback.dart';
-import '../../hooks/use_keyboard_scroll_adjustment.dart';
 import '../../hooks/use_scroll_tracking.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
@@ -317,26 +316,6 @@ class _CodexChatBody extends HookWidget {
     final isBackground =
         lifecycleState != null && lifecycleState != AppLifecycleState.resumed;
     final scroll = useScrollTracking(sessionId);
-    useKeyboardScrollAdjustment(scroll.controller);
-
-    // --- Keep chat content visible when keyboard appears ---
-    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
-    final prevKeyboardRef = useRef(0.0);
-    useEffect(() {
-      final prevKb = prevKeyboardRef.value;
-      prevKeyboardRef.value = keyboardHeight;
-      final delta = keyboardHeight - prevKb;
-      if (delta != 0) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!scroll.controller.hasClients) return;
-          final pos = scroll.controller.position;
-          final target = (pos.pixels - delta).clamp(0.0, pos.maxScrollExtent);
-          scroll.suppressNextSave();
-          scroll.controller.jumpTo(target);
-        });
-      }
-      return null;
-    }, [keyboardHeight]);
 
     // Chat input controller
     final chatInputController = useTextEditingController();
@@ -833,7 +812,7 @@ class _CodexChatBody extends HookWidget {
                           onPressed: () {
                             if (scroll.controller.hasClients) {
                               scroll.controller.animateTo(
-                                scroll.controller.position.maxScrollExtent,
+                                0.0,
                                 duration: const Duration(milliseconds: 200),
                                 curve: Curves.easeOut,
                               );
@@ -845,20 +824,20 @@ class _CodexChatBody extends HookWidget {
                     contentBuilder: (overlayHeight) => Opacity(
                       opacity: scroll.restorePending ? 0.0 : 1.0,
                       child: ChatMessageList(
-                      sessionId: sessionId,
-                      scrollController: scroll.controller,
-                      httpBaseUrl: context.read<BridgeService>().httpBaseUrl,
-                      onRetryMessage: (entry) {
-                        context.read<ChatSessionCubit>().retryMessage(entry);
-                      },
-                      onRewindMessage: null,
-                      editedPlanText: editedPlanText,
-                      allowPlanEditing: pendingPlanToolUseId != null,
-                      pendingPlanToolUseId: pendingPlanToolUseId,
-                      scrollToUserEntry: scrollToUserEntry,
-                      collapseToolResults: collapseToolResults,
-                      bottomPadding: 8,
-                    ),
+                        sessionId: sessionId,
+                        scrollController: scroll.controller,
+                        httpBaseUrl: context.read<BridgeService>().httpBaseUrl,
+                        onRetryMessage: (entry) {
+                          context.read<ChatSessionCubit>().retryMessage(entry);
+                        },
+                        onRewindMessage: null,
+                        editedPlanText: editedPlanText,
+                        allowPlanEditing: pendingPlanToolUseId != null,
+                        pendingPlanToolUseId: pendingPlanToolUseId,
+                        scrollToUserEntry: scrollToUserEntry,
+                        collapseToolResults: collapseToolResults,
+                        bottomPadding: 8,
+                      ),
                     ),
                   ),
                 ),
