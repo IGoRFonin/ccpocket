@@ -375,10 +375,21 @@ class _ApiKeyRequiredCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        _CommandChip(
-          textColor: textColor,
-          command: 'ANTHROPIC_API_KEY=sk-ant-...',
-          copyValue: 'ANTHROPIC_API_KEY=',
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+          decoration: BoxDecoration(
+            color: textColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'ANTHROPIC_API_KEY=sk-ant-...',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12,
+              fontFamily: 'monospace',
+            ),
+          ),
         ),
         const SizedBox(height: 10),
         Text(
