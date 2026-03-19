@@ -1572,10 +1572,7 @@ class _PrimaryClaudeOptions extends StatelessWidget {
         key: const ValueKey('dialog_claude_model'),
         initialValue: selectedClaudeModel,
         isExpanded: true,
-        decoration: buildInputDecoration(
-          l.model,
-          prefixIcon: const Icon(Icons.psychology_outlined, size: 18),
-        ),
+        decoration: buildInputDecoration(l.model),
         style: TextStyle(
           fontSize: 13,
           color: Theme.of(context).colorScheme.onSurface,
@@ -1650,10 +1647,7 @@ class _PrimaryCodexOptions extends StatelessWidget {
         key: const ValueKey('dialog_codex_model'),
         initialValue: selectedModel,
         isExpanded: true,
-        decoration: buildInputDecoration(
-          l.model,
-          prefixIcon: const Icon(Icons.psychology_outlined, size: 18),
-        ),
+        decoration: buildInputDecoration(l.model),
         style: TextStyle(
           fontSize: 13,
           color: Theme.of(context).colorScheme.onSurface,
