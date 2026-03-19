@@ -160,7 +160,7 @@ class ChatMessageHandler {
           '[handler] permission_request: '
           'tool=$toolName id=$toolUseId',
         );
-        if (toolName == 'AskUserQuestion') {
+        if (toolName == 'AskUserQuestion' || toolName == 'McpElicitation') {
           return ChatStateUpdate(
             entriesToAdd: [ServerChatEntry(msg)],
             askToolUseId: toolUseId,
@@ -173,6 +173,9 @@ class ChatMessageHandler {
           pendingPermission: msg,
           inPlanMode: toolName == 'ExitPlanMode' ? true : null,
         );
+      case PermissionResolvedMessage(:final toolUseId):
+        logger.info('[handler] permission_resolved: id=$toolUseId');
+        return ChatStateUpdate(entriesToAdd: [ServerChatEntry(msg)]);
       case ResultMessage(:final subtype, :final cost):
         return _handleResult(
           msg,
@@ -260,7 +263,8 @@ class ChatMessageHandler {
           entriesToAdd: [
             ServerChatEntry(
               ErrorMessage(
-                message: 'This feature requires a newer Bridge server.\n'
+                message:
+                    'This feature requires a newer Bridge server.\n'
                     'Run: npm update -g @ccpocket/bridge',
                 errorCode: 'bridge_update_required',
               ),
@@ -488,7 +492,8 @@ class ChatMessageHandler {
         }
         // Track pending permission request
         if (m is PermissionRequestMessage) {
-          if (m.toolName == 'AskUserQuestion') {
+          if (m.toolName == 'AskUserQuestion' ||
+              m.toolName == 'McpElicitation') {
             // Codex sends AskUserQuestion as permission_request directly
             lastAskToolUseId = m.toolUseId;
             lastAskInput = m.input;
@@ -504,6 +509,13 @@ class ChatMessageHandler {
               lastAskToolUseId = content.id;
               lastAskInput = content.input;
             }
+          }
+        }
+        if (m is PermissionResolvedMessage) {
+          pendingPermissions.remove(m.toolUseId);
+          if (lastAskToolUseId != null && m.toolUseId == lastAskToolUseId) {
+            lastAskToolUseId = null;
+            lastAskInput = null;
           }
         }
         // A tool_result means that permission was resolved.

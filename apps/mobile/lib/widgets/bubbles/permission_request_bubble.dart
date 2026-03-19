@@ -49,7 +49,7 @@ class _PermissionRequestBubbleState extends State<PermissionRequestBubble> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    widget.message.toolName,
+                    widget.message.displayToolName,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,

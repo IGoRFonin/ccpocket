@@ -203,6 +203,7 @@ export type ServerMessage =
   | { type: "status"; status: ProcessStatus }
   | { type: "history"; messages: ServerMessage[] }
   | { type: "permission_request"; toolUseId: string; toolName: string; input: Record<string, unknown> }
+  | { type: "permission_resolved"; toolUseId: string }
   | { type: "stream_delta"; text: string }
   | { type: "thinking_delta"; text: string }
   | { type: "file_list"; files: string[] }

@@ -258,6 +258,12 @@ class BridgeService implements BridgeServiceBase {
                 }
                 _taggedMessageController.add((msg, sessionId));
                 _messageController.add(msg);
+              case PermissionResolvedMessage():
+                if (sessionId != null) {
+                  clearSessionPermission(sessionId);
+                }
+                _taggedMessageController.add((msg, sessionId));
+                _messageController.add(msg);
               case SystemMessage(:final permissionMode):
                 if (sessionId != null && permissionMode != null) {
                   _patchSessionPermissionMode(sessionId, permissionMode);

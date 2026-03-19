@@ -215,7 +215,8 @@ class _RunningSessionCardState extends State<RunningSessionCard> {
                             onReject: () =>
                                 widget.onReject?.call(permission.toolUseId),
                           )
-                        : permission.toolName == 'AskUserQuestion' &&
+                        : (permission.toolName == 'AskUserQuestion' ||
+                                  permission.toolName == 'McpElicitation') &&
                               !isRequestUserInputApproval
                         ? _AskUserArea(
                             permission: permission,
@@ -262,7 +263,7 @@ class _RunningSessionCardState extends State<RunningSessionCard> {
                             },
                           ))
                   : switch (permission.toolName) {
-                      'AskUserQuestion'
+                      'AskUserQuestion' || 'McpElicitation'
                           when !permission.isRequestUserInputApproval =>
                         _AskUserArea(
                           permission: permission,

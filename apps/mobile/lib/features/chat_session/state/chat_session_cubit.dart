@@ -553,6 +553,8 @@ class ChatSessionCubit extends Cubit<ChatSessionState> {
         final msg = entry.message;
         if (msg is PermissionRequestMessage) {
           pendingPermissions[msg.toolUseId] = msg;
+        } else if (msg is PermissionResolvedMessage) {
+          resolvedIds.add(msg.toolUseId);
         } else if (msg is ToolResultMessage) {
           resolvedIds.add(msg.toolUseId);
         }

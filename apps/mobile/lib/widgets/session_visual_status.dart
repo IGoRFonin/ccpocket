@@ -32,6 +32,8 @@ SessionVisualStatus sessionVisualStatusFor({
         pendingPermission.isRequestUserInputApproval
             ? 'Approve tool call'
             : 'Answer question',
+      'McpElicitation' => 'Answer MCP request',
+      'Permissions' => 'Grant permissions',
       _ => 'Approve ${pendingPermission.toolName}',
     };
     return SessionVisualStatus(

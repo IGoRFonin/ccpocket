@@ -50,6 +50,8 @@ interface PendingApproval {
   toolUseId: string;
   toolName: string;
   input: Record<string, unknown>;
+  kind: "command" | "file" | "permissions";
+  requestedPermissions?: Record<string, unknown>;
 }
 
 interface PendingUserInputQuestion {
@@ -60,8 +62,10 @@ interface PendingUserInputQuestion {
 interface PendingUserInputRequest {
   requestId: string | number;
   toolUseId: string;
+  toolName: string;
   questions: PendingUserInputQuestion[];
   input: Record<string, unknown>;
+  kind: "questions" | "elicitation_form" | "elicitation_url";
 }
 
 interface PendingTurnCompletion {
@@ -347,9 +351,7 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
     }
 
     this.pendingApprovals.delete(pending.toolUseId);
-    this.respondToServerRequest(pending.requestId, {
-      decision: "accept",
-    });
+    this.respondToServerRequest(pending.requestId, buildApprovalResponse(pending, "accept"));
     this.emitToolResult(pending.toolUseId, "Approved");
 
     if (this.pendingApprovals.size === 0) {
@@ -365,12 +367,7 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
     }
 
     this.pendingApprovals.delete(pending.toolUseId);
-    this.respondToServerRequest(pending.requestId, {
-      decision: "accept",
-      acceptSettings: {
-        forSession: true,
-      },
-    });
+    this.respondToServerRequest(pending.requestId, buildApprovalResponse(pending, "acceptForSession"));
     this.emitToolResult(pending.toolUseId, "Approved (always)");
 
     if (this.pendingApprovals.size === 0) {
@@ -392,9 +389,7 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
     }
 
     this.pendingApprovals.delete(pending.toolUseId);
-    this.respondToServerRequest(pending.requestId, {
-      decision: "decline",
-    });
+    this.respondToServerRequest(pending.requestId, buildApprovalResponse(pending, "decline"));
     this.emitToolResult(pending.toolUseId, "Rejected");
 
     if (this.pendingApprovals.size === 0) {
@@ -410,9 +405,10 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
     }
 
     this.pendingUserInputs.delete(pending.toolUseId);
-    this.respondToServerRequest(pending.requestId, {
-      answers: buildUserInputAnswers(pending.questions, result),
-    });
+    this.respondToServerRequest(
+      pending.requestId,
+      buildUserInputResponse(pending, result),
+    );
 
     this.emitToolResult(pending.toolUseId, "Answered");
 
@@ -552,6 +548,8 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
         cwd: projectPath,
         approvalPolicy: normalizeApprovalPolicy(options?.approvalPolicy ?? "never"),
         sandbox: normalizeSandboxMode(options?.sandboxMode ?? "workspace-write"),
+        experimentalRawEvents: false,
+        persistExtendedHistory: true,
       };
       if (options?.model) threadParams.model = options.model;
       if (options?.modelReasoningEffort) {
@@ -570,6 +568,11 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
       const method = options?.threadId ? "thread/resume" : "thread/start";
       if (options?.threadId) {
         threadParams.threadId = options.threadId;
+      } else {
+        threadParams.experimentalRawEvents = false;
+      }
+      if (options?.threadId) {
+        threadParams.persistExtendedHistory = true;
       }
 
       const response = await this.request(method, threadParams) as Record<string, unknown>;
@@ -830,6 +833,11 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
           ...(typeof params.cwd === "string" ? { cwd: params.cwd } : {}),
           ...(params.commandActions ? { commandActions: params.commandActions } : {}),
           ...(params.networkApprovalContext ? { networkApprovalContext: params.networkApprovalContext } : {}),
+          ...(params.additionalPermissions ? { additionalPermissions: params.additionalPermissions } : {}),
+          ...(params.skillMetadata ? { skillMetadata: params.skillMetadata } : {}),
+          ...(params.proposedExecpolicyAmendment ? { proposedExecpolicyAmendment: params.proposedExecpolicyAmendment } : {}),
+          ...(params.proposedNetworkPolicyAmendments ? { proposedNetworkPolicyAmendments: params.proposedNetworkPolicyAmendments } : {}),
+          ...(params.availableDecisions ? { availableDecisions: params.availableDecisions } : {}),
           ...(typeof params.reason === "string" ? { reason: params.reason } : {}),
         };
 
@@ -838,6 +846,7 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
           toolUseId,
           toolName: "Bash",
           input,
+          kind: "command",
         });
         this.emitMessage({
           type: "permission_request",
@@ -853,6 +862,7 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
         const toolUseId = this.extractToolUseId(params, id);
         const input: Record<string, unknown> = {
           ...(Array.isArray(params.changes) ? { changes: params.changes } : {}),
+          ...(typeof params.grantRoot === "string" ? { grantRoot: params.grantRoot } : {}),
           ...(typeof params.reason === "string" ? { reason: params.reason } : {}),
         };
 
@@ -861,6 +871,7 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
           toolUseId,
           toolName: "FileChange",
           input,
+          kind: "file",
         });
         this.emitMessage({
           type: "permission_request",
@@ -890,17 +901,66 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
         this.pendingUserInputs.set(toolUseId, {
           requestId: id,
           toolUseId,
+          toolName: "AskUserQuestion",
           questions: questions.map((q) => ({
             id: q.id,
             question: q.question,
           })),
           input,
+          kind: "questions",
         });
         this.emitMessage({
           type: "permission_request",
           toolUseId,
           toolName: "AskUserQuestion",
           input,
+        });
+        this.setStatus("waiting_approval");
+        break;
+      }
+
+      case "item/permissions/requestApproval": {
+        const toolUseId = this.extractToolUseId(params, id);
+        const requestedPermissions = asRecord(params.permissions) ?? {};
+        const input: Record<string, unknown> = {
+          permissions: requestedPermissions,
+          ...(typeof params.reason === "string" ? { reason: params.reason } : {}),
+        };
+
+        this.pendingApprovals.set(toolUseId, {
+          requestId: id,
+          toolUseId,
+          toolName: "Permissions",
+          input,
+          kind: "permissions",
+          requestedPermissions,
+        });
+        this.emitMessage({
+          type: "permission_request",
+          toolUseId,
+          toolName: "Permissions",
+          input,
+        });
+        this.setStatus("waiting_approval");
+        break;
+      }
+
+      case "mcpServer/elicitation/request": {
+        const toolUseId = this.extractToolUseId(params, id);
+        const elicitation = createElicitationInput(params);
+        this.pendingUserInputs.set(toolUseId, {
+          requestId: id,
+          toolUseId,
+          toolName: "McpElicitation",
+          questions: elicitation.questions,
+          input: elicitation.input,
+          kind: elicitation.kind,
+        });
+        this.emitMessage({
+          type: "permission_request",
+          toolUseId,
+          toolName: "McpElicitation",
+          input: elicitation.input,
         });
         this.setStatus("waiting_approval");
         break;
@@ -1017,6 +1077,11 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
             model: "codex",
           },
         });
+        break;
+      }
+
+      case "serverRequest/resolved": {
+        this.handleServerRequestResolved(params);
         break;
       }
 
@@ -1144,6 +1209,37 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
         break;
       }
 
+      case "collabagenttoolcall": {
+        const tool = typeof item.tool === "string" ? item.tool : "subagent";
+        const toolName = "SubAgent";
+        const input: Record<string, unknown> = {
+          tool,
+          ...(typeof item.prompt === "string" ? { prompt: item.prompt } : {}),
+          ...(typeof item.senderThreadId === "string" ? { senderThreadId: item.senderThreadId } : {}),
+          ...(Array.isArray(item.receiverThreadIds) ? { receiverThreadIds: item.receiverThreadIds } : {}),
+          ...(typeof item.model === "string" ? { model: item.model } : {}),
+          ...(typeof item.reasoningEffort === "string" ? { reasoningEffort: item.reasoningEffort } : {}),
+          ...(item.agentsStates ? { agentsStates: item.agentsStates } : {}),
+        };
+        this.emitMessage({
+          type: "assistant",
+          message: {
+            id: itemId,
+            role: "assistant",
+            content: [
+              {
+                type: "tool_use",
+                id: itemId,
+                name: toolName,
+                input,
+              },
+            ],
+            model: "codex",
+          },
+        });
+        break;
+      }
+
       default:
         break;
     }
@@ -1258,6 +1354,28 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
           toolUseId: itemId,
           content: query ? `Web search: ${query}` : "Web search completed",
           toolName: "WebSearch",
+        });
+        break;
+      }
+
+      case "collabagenttoolcall": {
+        const tool = typeof item.tool === "string" ? item.tool : "subagent";
+        const status = typeof item.status === "string" ? item.status : "completed";
+        const receiverThreadIds = Array.isArray(item.receiverThreadIds)
+          ? item.receiverThreadIds.map((entry) => String(entry))
+          : [];
+        const content = [
+          `tool: ${tool}`,
+          `status: ${status}`,
+          ...(receiverThreadIds.length > 0
+            ? [`agents: ${receiverThreadIds.join(", ")}`]
+            : []),
+        ].join("\n");
+        this.emitMessage({
+          type: "tool_result",
+          toolUseId: itemId,
+          content,
+          toolName: "SubAgent",
         });
         break;
       }
@@ -1389,10 +1507,61 @@ export class CodexProcess extends EventEmitter<CodexProcessEvents> {
 
   private extractToolUseId(params: Record<string, unknown>, requestId: number | string): string {
     if (typeof params.approvalId === "string") return params.approvalId;
+    if (typeof params.elicitationId === "string") return params.elicitationId;
     if (typeof params.itemId === "string") return params.itemId;
     if (typeof requestId === "string") return requestId;
     return `approval-${requestId}`;
   }
+
+  private handleServerRequestResolved(params: Record<string, unknown>): void {
+    const requestId = params.requestId;
+    if (requestId === undefined || requestId === null) return;
+
+    const approval = [...this.pendingApprovals.values()].find((entry) => entry.requestId === requestId);
+    if (approval) {
+      this.pendingApprovals.delete(approval.toolUseId);
+      this.emitMessage({ type: "permission_resolved", toolUseId: approval.toolUseId });
+    }
+
+    const inputRequest = [...this.pendingUserInputs.values()].find((entry) => entry.requestId === requestId);
+    if (inputRequest) {
+      this.pendingUserInputs.delete(inputRequest.toolUseId);
+      this.emitMessage({ type: "permission_resolved", toolUseId: inputRequest.toolUseId });
+    }
+
+    if (!this.pendingPlanCompletion && this.pendingApprovals.size === 0 && this.pendingUserInputs.size === 0) {
+      this.setStatus(this.pendingTurnId ? "running" : "idle");
+    }
+  }
+}
+
+function buildApprovalResponse(
+  pending: PendingApproval,
+  decision: "accept" | "acceptForSession" | "decline",
+): Record<string, unknown> {
+  if (pending.kind === "permissions") {
+    return {
+      scope: decision === "acceptForSession" ? "session" : "turn",
+      permissions: decision === "decline" ? {} : (pending.requestedPermissions ?? {}),
+    };
+  }
+
+  return {
+    decision,
+  };
+}
+
+function buildUserInputResponse(
+  pending: PendingUserInputRequest,
+  rawResult: string,
+): Record<string, unknown> {
+  if (pending.kind === "questions") {
+    return {
+      answers: buildUserInputAnswers(pending.questions, rawResult),
+    };
+  }
+
+  return buildElicitationResponse(pending, rawResult);
 }
 
 function normalizeApprovalPolicy(value: CodexStartOptions["approvalPolicy"]): string {
@@ -1633,6 +1802,188 @@ function normalizeAnswerValues(value: unknown): string[] {
   if (value == null) return [];
   const normalized = String(value).trim();
   return normalized ? [normalized] : [];
+}
+
+function buildElicitationResponse(
+  pending: PendingUserInputRequest,
+  rawResult: string,
+): Record<string, unknown> {
+  if (pending.kind === "elicitation_url") {
+    const action = parseElicitationAction(rawResult);
+    return {
+      action,
+      content: null,
+      _meta: null,
+    };
+  }
+
+  const parsed = parseResultObject(rawResult);
+  const content: Record<string, unknown> = {};
+
+  for (const question of pending.questions) {
+    const candidate = parsed.byId[question.id] ?? parsed.byQuestion[question.question];
+    const answers = normalizeAnswerValues(candidate);
+    if (answers.length === 1) {
+      content[question.id] = answers[0];
+    } else if (answers.length > 1) {
+      content[question.id] = answers;
+    }
+  }
+
+  if (Object.keys(content).length === 0 && pending.questions.length === 1) {
+    const answers = normalizeAnswerValues(rawResult);
+    if (answers.length === 1) {
+      content[pending.questions[0].id] = answers[0];
+    } else if (answers.length > 1) {
+      content[pending.questions[0].id] = answers;
+    }
+  }
+
+  return {
+    action: "accept",
+    content: Object.keys(content).length > 0 ? content : null,
+    _meta: null,
+  };
+}
+
+function parseElicitationAction(rawResult: string): "accept" | "decline" | "cancel" {
+  const normalized = rawResult.trim().toLowerCase();
+  if (normalized.includes("cancel")) return "cancel";
+  if (normalized.includes("decline") || normalized.includes("deny")) return "decline";
+
+  try {
+    const parsed = JSON.parse(rawResult) as Record<string, unknown>;
+    const answers = parsed.answers;
+    if (answers && typeof answers === "object" && !Array.isArray(answers)) {
+      const first = Object.values(answers as Record<string, unknown>)[0];
+      const answer = normalizeAnswerValues(first).join(" ").toLowerCase();
+      if (answer.includes("cancel")) return "cancel";
+      if (answer.includes("decline") || answer.includes("deny")) return "decline";
+    }
+  } catch {
+    // Fall through to accept.
+  }
+
+  return "accept";
+}
+
+function createElicitationInput(params: Record<string, unknown>): {
+  input: Record<string, unknown>;
+  questions: PendingUserInputQuestion[];
+  kind: PendingUserInputRequest["kind"];
+} {
+  const serverName = typeof params.serverName === "string" ? params.serverName : "MCP";
+  const message = typeof params.message === "string" ? params.message : "Provide input";
+
+  if (params.mode === "url") {
+    const url = typeof params.url === "string" ? params.url : "";
+    const question = url ? `${message}\n${url}` : message;
+    return {
+      kind: "elicitation_url",
+      questions: [{ id: "elicitation_action", question }],
+      input: {
+        mode: "url",
+        serverName,
+        url,
+        message,
+        questions: [
+          {
+            id: "elicitation_action",
+            header: serverName,
+            question,
+            options: [
+              { label: "Accept", description: "Continue with this request" },
+              { label: "Decline", description: "Reject this request" },
+              { label: "Cancel", description: "Cancel without accepting" },
+            ],
+            multiSelect: false,
+            isOther: false,
+            isSecret: false,
+          },
+        ],
+      },
+    };
+  }
+
+  const schema = asRecord(params.requestedSchema);
+  const properties = asRecord(schema?.properties) ?? {};
+  const requiredFields = new Set(
+    Array.isArray(schema?.required)
+      ? schema!.required!.map((entry) => String(entry))
+      : [],
+  );
+
+  const questions = Object.entries(properties)
+    .filter(([, value]) => value && typeof value === "object")
+    .map(([key, value]) => {
+      const field = value as Record<string, unknown>;
+      const title = typeof field.title === "string" ? field.title : key;
+      const description = typeof field.description === "string" ? field.description : message;
+      const enumValues = Array.isArray(field.enum) ? field.enum.map((entry) => String(entry)) : [];
+      const type = typeof field.type === "string" ? field.type : "";
+      const options = enumValues.length > 0
+        ? enumValues.map((entry, index) => ({
+            label: entry,
+            description: index === 0 ? description : "",
+          }))
+        : type === "boolean"
+          ? [
+              { label: "true", description: description },
+              { label: "false", description: "" },
+            ]
+          : [];
+
+      return {
+        id: key,
+        question: requiredFields.has(key) ? `${title} (required)` : title,
+        header: serverName,
+        options,
+        isOther: options.length === 0,
+        isSecret: false,
+      };
+    });
+
+  const normalizedQuestions = questions.length > 0
+    ? questions
+    : [
+        {
+          id: "value",
+          question: message,
+          header: serverName,
+          options: [] as Array<{ label: string; description: string }>,
+          isOther: true,
+          isSecret: false,
+        },
+      ];
+
+  return {
+    kind: "elicitation_form",
+    questions: normalizedQuestions.map((question) => ({
+      id: question.id,
+      question: question.question,
+    })),
+    input: {
+      mode: "form",
+      serverName,
+      message,
+      requestedSchema: schema,
+      questions: normalizedQuestions.map((question) => ({
+        id: question.id,
+        header: question.header,
+        question: question.question,
+        options: question.options,
+        multiSelect: false,
+        isOther: question.isOther,
+        isSecret: question.isSecret,
+      })),
+    },
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
 }
 
 function formatPlanUpdateText(params: Record<string, unknown>): string {

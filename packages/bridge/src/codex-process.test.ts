@@ -265,6 +265,235 @@ describe("CodexProcess (app-server)", () => {
     proc.stop();
   });
 
+  it("responds to permission grants with granted scope and requested permissions", async () => {
+    const proc = new CodexProcess();
+    const messages: unknown[] = [];
+    proc.on("message", (msg) => messages.push(msg));
+
+    proc.start("/tmp/project-perms");
+    const child = fakeChildren[0];
+
+    await tick();
+    const initReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: initReq.id, result: {} })}\n`);
+    await tick();
+    nextOutgoingNotification(child);
+    const threadReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: threadReq.id, result: { thread: { id: "thr_perms" } } })}\n`);
+
+    await tick();
+    child.stdout.emit(
+      "data",
+      `${JSON.stringify({
+        id: "req-perms-1",
+        method: "item/permissions/requestApproval",
+        params: {
+          itemId: "perm_item_1",
+          threadId: "thr_perms",
+          turnId: "turn_perms",
+          reason: "Need write access",
+          permissions: {
+            fileSystem: {
+              write: ["/tmp/project-perms"],
+            },
+          },
+        },
+      })}\n`,
+    );
+
+    await tick();
+
+    expect(messages).toContainEqual(
+      expect.objectContaining({
+        type: "permission_request",
+        toolUseId: "perm_item_1",
+        toolName: "Permissions",
+      }),
+    );
+
+    proc.approveAlways("perm_item_1");
+    await tick();
+
+    const response = nextOutgoingResponse(child);
+    expect(response).toMatchObject({
+      id: "req-perms-1",
+      result: {
+        scope: "session",
+        permissions: {
+          fileSystem: {
+            write: ["/tmp/project-perms"],
+          },
+        },
+      },
+    });
+
+    proc.stop();
+  });
+
+  it("maps MCP elicitation form requests to answer flow", async () => {
+    const proc = new CodexProcess();
+    const messages: unknown[] = [];
+    proc.on("message", (msg) => messages.push(msg));
+
+    proc.start("/tmp/project-elicitation");
+    const child = fakeChildren[0];
+
+    await tick();
+    const initReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: initReq.id, result: {} })}\n`);
+    await tick();
+    nextOutgoingNotification(child);
+    const threadReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: threadReq.id, result: { thread: { id: "thr_elicit" } } })}\n`);
+
+    await tick();
+    child.stdout.emit(
+      "data",
+      `${JSON.stringify({
+        id: "req-elicit-1",
+        method: "mcpServer/elicitation/request",
+        params: {
+          threadId: "thr_elicit",
+          turnId: "turn_elicit",
+          serverName: "codex_apps",
+          mode: "form",
+          message: "Confirm this operation",
+          requestedSchema: {
+            type: "object",
+            properties: {
+              confirmed: {
+                type: "boolean",
+                title: "Confirmed",
+                description: "Whether to continue",
+              },
+            },
+            required: ["confirmed"],
+          },
+        },
+      })}\n`,
+    );
+
+    await tick();
+
+    expect(messages).toContainEqual(
+      expect.objectContaining({
+        type: "permission_request",
+        toolUseId: "req-elicit-1",
+        toolName: "McpElicitation",
+      }),
+    );
+
+    proc.answer("req-elicit-1", "true");
+    await tick();
+
+    const response = nextOutgoingResponse(child);
+    expect(response).toMatchObject({
+      id: "req-elicit-1",
+      result: {
+        action: "accept",
+        content: {
+          confirmed: "true",
+        },
+      },
+    });
+
+    proc.stop();
+  });
+
+  it("clears pending requests when serverRequest/resolved arrives", async () => {
+    const proc = new CodexProcess();
+    const messages: unknown[] = [];
+    proc.on("message", (msg) => messages.push(msg));
+
+    proc.start("/tmp/project-resolved");
+    const child = fakeChildren[0];
+
+    await tick();
+    const initReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: initReq.id, result: {} })}\n`);
+    await tick();
+    nextOutgoingNotification(child);
+    const threadReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: threadReq.id, result: { thread: { id: "thr_resolved" } } })}\n`);
+
+    await tick();
+    child.stdout.emit(
+      "data",
+      `${JSON.stringify({
+        id: "req-resolved-1",
+        method: "item/commandExecution/requestApproval",
+        params: {
+          itemId: "item_resolved_1",
+          command: "pwd",
+          cwd: "/tmp/project-resolved",
+        },
+      })}\n`,
+    );
+
+    await tick();
+    child.stdout.emit(
+      "data",
+      `${JSON.stringify({
+        method: "serverRequest/resolved",
+        params: {
+          threadId: "thr_resolved",
+          requestId: "req-resolved-1",
+        },
+      })}\n`,
+    );
+    await tick();
+
+    expect(messages).toContainEqual(
+      expect.objectContaining({
+        type: "permission_resolved",
+        toolUseId: "item_resolved_1",
+      }),
+    );
+
+    proc.stop();
+  });
+
+  it("uses acceptForSession for command approvals", async () => {
+    const proc = new CodexProcess();
+
+    proc.start("/tmp/project-approve-always");
+    const child = fakeChildren[0];
+
+    await tick();
+    const initReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: initReq.id, result: {} })}\n`);
+    await tick();
+    nextOutgoingNotification(child);
+    const threadReq = nextOutgoingRequest(child);
+    child.stdout.emit("data", `${JSON.stringify({ id: threadReq.id, result: { thread: { id: "thr_always" } } })}\n`);
+
+    await tick();
+    child.stdout.emit(
+      "data",
+      `${JSON.stringify({
+        id: "req-always-1",
+        method: "item/commandExecution/requestApproval",
+        params: {
+          itemId: "item_always_1",
+          command: "git status",
+          cwd: "/tmp/project-approve-always",
+        },
+      })}\n`,
+    );
+
+    await tick();
+    proc.approveAlways("item_always_1");
+    await tick();
+
+    const response = nextOutgoingResponse(child);
+    expect(response).toMatchObject({
+      id: "req-always-1",
+      result: { decision: "acceptForSession" },
+    });
+
+    proc.stop();
+  });
+
   it("emits plan notifications as regular stream messages", async () => {
     const proc = new CodexProcess();
     const messages: unknown[] = [];

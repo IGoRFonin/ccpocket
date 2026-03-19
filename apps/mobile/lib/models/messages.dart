@@ -395,6 +395,9 @@ sealed class ServerMessage {
         toolName: json['toolName'] as String,
         input: Map<String, dynamic>.from(json['input'] as Map),
       ),
+      'permission_resolved' => PermissionResolvedMessage(
+        toolUseId: json['toolUseId'] as String,
+      ),
       'stream_delta' => StreamDeltaMessage(text: json['text'] as String),
       'thinking_delta' => ThinkingDeltaMessage(text: json['text'] as String),
       'session_list' => SessionListMessage(
@@ -773,9 +776,22 @@ class PermissionRequestMessage implements ServerMessage {
   bool get isRequestUserInputApproval =>
       toolName == 'AskUserQuestion' && isMcpApprovalRequestUserInput(input);
 
+  bool get isMcpElicitation => toolName == 'McpElicitation';
+
+  bool get isPermissionGrantRequest => toolName == 'Permissions';
+
   String get displayToolName {
     if (isRequestUserInputApproval) {
       return requestUserInputHeader(input) ?? 'App Tool Approval';
+    }
+    if (isMcpElicitation) {
+      final serverName = input['serverName'] as String?;
+      return serverName == null || serverName.isEmpty
+          ? 'MCP Elicitation'
+          : 'MCP: $serverName';
+    }
+    if (isPermissionGrantRequest) {
+      return 'Additional Permissions';
     }
     return toolName;
   }
@@ -785,8 +801,31 @@ class PermissionRequestMessage implements ServerMessage {
     if (isRequestUserInputApproval) {
       return requestUserInputQuestionText(input) ?? displayToolName;
     }
+    if (isMcpElicitation) {
+      final message = input['message'] as String?;
+      final url = input['url'] as String?;
+      if (message != null &&
+          message.isNotEmpty &&
+          url != null &&
+          url.isNotEmpty) {
+        return '$message | $url';
+      }
+      return message ?? url ?? displayToolName;
+    }
+    if (isPermissionGrantRequest) {
+      final reason = input['reason'] as String?;
+      if (reason != null && reason.isNotEmpty) return reason;
+      if (input['permissions'] != null) return 'Grant requested permissions';
+    }
     final parts = <String>[];
-    for (final key in ['command', 'file_path', 'path', 'pattern', 'url']) {
+    for (final key in [
+      'command',
+      'file_path',
+      'path',
+      'pattern',
+      'url',
+      'reason',
+    ]) {
       if (input.containsKey(key)) {
         final val = input[key].toString();
         parts.add(val);
@@ -794,6 +833,11 @@ class PermissionRequestMessage implements ServerMessage {
     }
     return parts.isNotEmpty ? parts.join(' | ') : toolName;
   }
+}
+
+class PermissionResolvedMessage implements ServerMessage {
+  final String toolUseId;
+  const PermissionResolvedMessage({required this.toolUseId});
 }
 
 class StreamDeltaMessage implements ServerMessage {
