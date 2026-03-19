@@ -18,8 +18,10 @@ void main() {
           home: HookBuilder(
             builder: (context) {
               result = useScrollTracking('session-1');
+              // Use reverse: true — offset 0 = bottom of chat
               return ListView.builder(
                 controller: result.controller,
+                reverse: true,
                 itemCount: 100,
                 itemBuilder: (_, i) => SizedBox(height: 50, child: Text('$i')),
               );
@@ -30,9 +32,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(result.controller, isA<ScrollController>());
-      // Initially at offset 0 with a long list → isScrolledUp is true
-      // because we are far from maxScrollExtent.
-      // (the hook considers isScrolledUp = pixels < maxScrollExtent - 100)
+      // Initially at offset 0 with reverse list → at bottom → not scrolled up
     });
 
     testWidgets('isScrolledUp becomes false when at bottom', (tester) async {
@@ -46,8 +46,10 @@ void main() {
           home: HookBuilder(
             builder: (context) {
               result = useScrollTracking('session-2');
+              // Use reverse: true — offset 0 = bottom of chat
               return ListView.builder(
                 controller: result.controller,
+                reverse: true,
                 itemCount: 200,
                 itemBuilder: (_, i) => SizedBox(height: 50, child: Text('$i')),
               );
@@ -57,10 +59,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Scroll to bottom
-      result.controller.jumpTo(result.controller.position.maxScrollExtent);
-      await tester.pumpAndSettle();
-
+      // With reverse list, offset 0 = bottom → isScrolledUp should be false
       expect(result.isScrolledUp, isFalse);
     });
 
@@ -75,8 +74,10 @@ void main() {
           home: HookBuilder(
             builder: (context) {
               result = useScrollTracking('session-4');
+              // Use reverse: true — offset 0 = bottom of chat
               return ListView.builder(
                 controller: result.controller,
+                reverse: true,
                 itemCount: 200,
                 itemBuilder: (_, i) => SizedBox(height: 50, child: Text('$i')),
               );
@@ -86,9 +87,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Scroll near bottom (within 100px threshold) → not scrolledUp
-      final max = result.controller.position.maxScrollExtent;
-      result.controller.jumpTo(max - 50);
+      // Near bottom (within 100px threshold) → not scrolledUp
+      // With reverse list, offset 50 is near bottom (offset 0)
+      result.controller.jumpTo(50);
       await tester.pumpAndSettle();
       expect(result.isScrolledUp, isFalse);
     });

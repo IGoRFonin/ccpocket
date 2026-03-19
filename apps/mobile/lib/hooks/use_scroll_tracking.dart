@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
@@ -13,7 +15,12 @@ const _kExtentChangeTolerance = 1.0;
 typedef ScrollTrackingResult = ({
   AutoScrollController controller,
   bool isScrolledUp,
+  bool restorePending,
   void Function() scrollToBottom,
+
+  /// Call before programmatic jumpTo (e.g. keyboard adjustment) to prevent
+  /// that offset from being persisted as the user's scroll position.
+  void Function() suppressNextSave,
 });
 
 /// Manages scroll position tracking with three responsibilities:
@@ -26,39 +33,41 @@ typedef ScrollTrackingResult = ({
 ///    animates to the bottom (skipped when the user has scrolled up).
 ScrollTrackingResult useScrollTracking(String sessionId) {
   final controller = useMemoized(AutoScrollController.new);
-  // Dispose the controller when the hook is disposed.
-  useEffect(() => controller.dispose, const []);
 
   final isScrolledUp = useState(false);
-
-  // Ref to track isScrolledUp without rebuilds (for scrollToBottom closure).
   final isScrolledUpRef = useRef(false);
-
-  // Track previous maxScrollExtent to detect layout-driven changes
-  // (e.g. Android notification shade toggling safe-area padding).
   final prevMaxExtent = useRef<double?>(null);
+  final suppressSave = useRef(false);
+
+  // Always start hidden to let past_history + history settle.
+  final restorePending = useState(true);
+  final restoreConsumed = useRef(false);
 
   useEffect(() {
+    final saved = _scrollOffsets[sessionId];
+    restoreConsumed.value = false;
+    restorePending.value = true;
+
     void onScroll() {
       if (!controller.hasClients) return;
       final pos = controller.position;
 
+      // Persist offset (skip keyboard-adjustment jumpTo events).
+      if (suppressSave.value) {
+        suppressSave.value = false;
+      } else {
+        _scrollOffsets[sessionId] = pos.pixels;
+      }
+
       final prevMax = prevMaxExtent.value;
       prevMaxExtent.value = pos.maxScrollExtent;
 
-      // When maxScrollExtent shifts (viewport/layout change) while we were
-      // already at the bottom, ignore this event — don't flip isScrolledUp.
-      // The framework will settle the scroll position on the next frame.
-      // This prevents the FAB from flashing when the Android notification
-      // shade is pulled down/up.
-      // Note: when isScrolledUp is already true (user scrolled up), we don't
-      // guard — the user's intent takes priority over layout shifts.
       if (prevMax != null && !isScrolledUpRef.value) {
         final extentDelta = (pos.maxScrollExtent - prevMax).abs();
         if (extentDelta > _kExtentChangeTolerance) return;
       }
 
-      final scrolled = pos.pixels < pos.maxScrollExtent - 100;
+      final scrolled = pos.pixels > 100;
       isScrolledUpRef.value = scrolled;
       if (scrolled != isScrolledUp.value) {
         isScrolledUp.value = scrolled;
@@ -67,30 +76,33 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
 
     controller.addListener(onScroll);
 
-    // Restore saved offset after first frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final saved = _scrollOffsets[sessionId];
-      if (saved != null && controller.hasClients) {
-        controller.jumpTo(saved);
+    // Stabilization: wait 300ms for past_history + history + overlay
+    // measurement to settle, then restore offset and show the list.
+    final showTimer = Timer(const Duration(milliseconds: 300), () {
+      if (restoreConsumed.value) return;
+      restoreConsumed.value = true;
+      if (saved != null && saved > 0 && controller.hasClients) {
+        final max = controller.position.maxScrollExtent;
+        controller.jumpTo(saved.clamp(0.0, max));
       }
+      restorePending.value = false;
     });
 
     return () {
-      // Persist offset before disposal.
-      if (controller.hasClients) {
-        _scrollOffsets[sessionId] = controller.offset;
-      }
+      showTimer.cancel();
       controller.removeListener(onScroll);
       prevMaxExtent.value = null;
     };
   }, [sessionId]);
+
+  useEffect(() => controller.dispose, const []);
 
   void scrollToBottom() {
     if (isScrolledUpRef.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (controller.hasClients) {
         controller.animateTo(
-          controller.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
         );
@@ -101,6 +113,8 @@ ScrollTrackingResult useScrollTracking(String sessionId) {
   return (
     controller: controller,
     isScrolledUp: isScrolledUp.value,
+    restorePending: restorePending.value,
     scrollToBottom: scrollToBottom,
+    suppressNextSave: () => suppressSave.value = true,
   );
 }

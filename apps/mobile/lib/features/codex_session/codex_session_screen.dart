@@ -319,6 +319,25 @@ class _CodexChatBody extends HookWidget {
     final scroll = useScrollTracking(sessionId);
     useKeyboardScrollAdjustment(scroll.controller);
 
+    // --- Keep chat content visible when keyboard appears ---
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
+    final prevKeyboardRef = useRef(0.0);
+    useEffect(() {
+      final prevKb = prevKeyboardRef.value;
+      prevKeyboardRef.value = keyboardHeight;
+      final delta = keyboardHeight - prevKb;
+      if (delta != 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!scroll.controller.hasClients) return;
+          final pos = scroll.controller.position;
+          final target = (pos.pixels - delta).clamp(0.0, pos.maxScrollExtent);
+          scroll.suppressNextSave();
+          scroll.controller.jumpTo(target);
+        });
+      }
+      return null;
+    }, [keyboardHeight]);
+
     // Chat input controller
     final chatInputController = useTextEditingController();
     final planFeedbackController = useTextEditingController();
@@ -823,7 +842,9 @@ class _CodexChatBody extends HookWidget {
                         ),
                       );
                     },
-                    contentBuilder: (overlayHeight) => ChatMessageList(
+                    contentBuilder: (overlayHeight) => Opacity(
+                      opacity: scroll.restorePending ? 0.0 : 1.0,
+                      child: ChatMessageList(
                       sessionId: sessionId,
                       scrollController: scroll.controller,
                       httpBaseUrl: context.read<BridgeService>().httpBaseUrl,
@@ -836,8 +857,8 @@ class _CodexChatBody extends HookWidget {
                       pendingPlanToolUseId: pendingPlanToolUseId,
                       scrollToUserEntry: scrollToUserEntry,
                       collapseToolResults: collapseToolResults,
-                      onScrollToBottom: scroll.scrollToBottom,
                       bottomPadding: 8,
+                    ),
                     ),
                   ),
                 ),
