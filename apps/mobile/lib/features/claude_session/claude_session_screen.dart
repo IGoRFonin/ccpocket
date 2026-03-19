@@ -8,6 +8,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 
 import '../../constants/feature_flags.dart';
 import '../../hooks/use_app_resume_callback.dart';
+import '../../hooks/use_keyboard_scroll_adjustment.dart';
 import '../../hooks/use_scroll_tracking.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/messages.dart';
@@ -319,6 +320,7 @@ class _ChatScreenBody extends HookWidget {
     final isBackground =
         lifecycleState != null && lifecycleState != AppLifecycleState.resumed;
     final scroll = useScrollTracking(sessionId);
+    useKeyboardScrollAdjustment(scroll.controller);
 
     // Plan feedback controller (for plan approval rejection message)
     final planFeedbackController = useTextEditingController();
